@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin - Staff Dashboard</title>
+
+<style>
+  body{ font-family: Arial; background:#71773d; margin:0; color:#111; }
+  .header{
+    background:#000; color:#fff; padding:15px; font-weight:bold; text-align:center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: clamp(14px, 5vw, 24px); line-height: 1.2;
+  }
+  .navbar{
+    background:#333; padding:10px 12px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .nav-left{
+    display:flex; align-items:center; gap:10px;
+    flex:1; justify-content:center;
+    flex-wrap: nowrap; overflow-x:auto; overflow-y:hidden; white-space:nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-left::-webkit-scrollbar{ height:6px; }
+  .nav-left::-webkit-scrollbar-thumb{ background:#666; border-radius:10px; }
+  .navbar a{
+    color:#fff; text-decoration:none; padding:10px; border-radius:5px;
+    display:inline-block; flex:0 0 auto;
+  }
+  .navbar a:hover{ background:#555; }
+  .logout-btn{
+    background:#c62828; color:#fff; border:none;
+    padding:10px 14px; border-radius:6px;
+    cursor:pointer; white-space:nowrap; flex:0 0 auto;
+  }
+  .logout-btn:hover{ background:#b71c1c; }
+
+  .container{
+    width:95%;
+    margin:20px auto;
+    background:rgba(206,206,109,0.993);
+    padding:18px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+  }
+
+  .card{
+    background:rgba(255,255,255,0.70);
+    border:1px solid rgba(0,0,0,0.15);
+    border-radius:10px;
+    padding:14px;
+    margin-top:12px;
+  }
+
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:end;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:220px;
+    flex:1;
+  }
+  label{ font-weight:bold; }
+  input, select{
+    padding:10px;
+    border-radius:8px;
+    border:1px solid rgba(0,0,0,0.25);
+    width:100%;
+    box-sizing:border-box;
+    background:#fff;
+  }
+  .btn{
+    padding:10px 14px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    white-space:nowrap;
+    background:#000; color:#fff;
+  }
+  .btn:hover{ opacity:0.9; }
+
+  .table-wrap{ width:100%; overflow-x:auto; margin-top:10px; }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width: 900px;
+    background:rgba(255,255,255,0.55);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  th{ background:#000; color:#fff; }
+  th,td{ border:1px solid #000; padding:10px; text-align:center; vertical-align:middle; }
+
+  .help{ font-size:13px; opacity:0.85; margin-top:8px; }
+</style>
+</head>
+
+<body>
+  <div class="header">BREWSPOT CAFE — ADMIN</div>
+
+  <div class="navbar">
+    <div class="nav-left">
+      <a href="admin.html">Admin Dashboard</a>
+      <a href="admin-staff-dashboard.html">Staff Dashboard</a>
+    </div>
+    <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
+  </div>
+
+  <div class="container">
+    <h2>Staff Time Records</h2>
+
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="staffSelect">Select Staff</label>
+          <select id="staffSelect">
+            <option value="">Loading...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="fromDate">From (MM/DD/YYYY)</label>
+          <input id="fromDate" type="date">
+        </div>
+
+        <div class="field">
+          <label for="toDate">To (MM/DD/YYYY)</label>
+          <input id="toDate" type="date">
+        </div>
+
+        <button class="btn" id="filterBtn" type="button">Filter</button>
+
+    </div>
+
+    <div class="card">
+      <h3>Results</h3>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date (MM/DD/YYYY)</th>
+              <th>Time In</th>
+              <th>Time Out</th>
+              <th>Total Hours</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody">
+            <tr><td colspan="4">Select a staff and filter a date range.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
+import { auth, database } from "./firebase.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { ref, get } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+function mmddyyyyFromISO(iso){
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "--/--/----";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function hoursBetween(dateISO, timeIn, timeOut){
+  // same-day only. if you need cross-midnight, tell me.
+  const start = new Date(`${dateISO}T${timeIn}:00`);
+  const end = new Date(`${dateISO}T${timeOut}:00`);
+  const ms = end - start;
+  if (Number.isNaN(ms) || ms <= 0) return 0;
+  return ms / (1000 * 60 * 60);
+}
+
+function safeText(v){ return String(v ?? ""); }
+
+const staffSelect = document.getElementById("staffSelect");
+const fromDate = document.getElementById("fromDate");
+const toDate = document.getElementById("toDate");
+const filterBtn = document.getElementById("filterBtn");
+const recordsBody = document.getElementById("recordsBody");
+
+async function requireAdmin(user){
+  let role = "";
+  try{
+    const snap = await get(ref(database, "users/" + user.uid + "/role"));
+    if (snap.exists()) role = snap.val();
+  }catch(e){
+    console.warn("Role read failed:", e);
+  }
+  if (role !== "admin"){
+    alert("Access denied. Admin only.");
+    window.location.href = "dashboard.html";
+    return false;
+  }
+  return true;
+}
+
+async function loadStaffList(){
+  const snap = await get(ref(database, "users"));
+  const users = snap.exists() ? (snap.val() || {}) : {};
+
+  const staff = Object.entries(users)
+    .map(([uid, u]) => ({ uid, ...u }))
+    .filter(u => (u.role || "staff").toLowerCase() !== "admin")
+    .sort((a,b) => safeText(a.name || a.email).localeCompare(safeText(b.name || b.email)));
+
+  staffSelect.innerHTML = `<option value="">-- Select --</option>` + staff.map(u => {
+    const label = u.name || u.fullName || u.fullname || u.email || u.uid;
+    return `<option value="${u.uid}">${safeText(label)}</option>`;
+  }).join("");
+}
+
+function eachDateISO(startISO, endISO){
+  const out = [];
+  const s = new Date(startISO + "T00:00:00");
+  const e = new Date(endISO + "T00:00:00");
+  for (let d = new Date(s); d <= e; d.setDate(d.getDate() + 1)){
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    out.push(`${yyyy}-${mm}-${dd}`);
+  }
+  return out;
+}
+
+async function loadRecords(uid, startISO, endISO){
+  // reads: timeRecords/<uid>/<YYYY-MM-DD> = { timeIn, timeOut }
+  const snap = await get(ref(database, `timeRecords/${uid}`));
+  const all = snap.exists() ? (snap.val() || {}) : {};
+
+  const days = eachDateISO(startISO, endISO);
+
+  const rows = [];
+  for (const day of days){
+    if (all[day]){
+      rows.push({ date: day, ...all[day] });
+    }
+  }
+
+  if (rows.length === 0){
+    recordsBody.innerHTML = `<tr><td colspan="4">No records found for that range.</td></tr>`;
+    return;
+  }
+
+  recordsBody.innerHTML = rows.map(r => {
+    const total = (r.timeIn && r.timeOut) ? hoursBetween(r.date, r.timeIn, r.timeOut) : 0;
+    return `
+      <tr>
+        <td>${mmddyyyyFromISO(r.date)}</td>
+        <td>${safeText(r.timeIn || "")}</td>
+        <td>${safeText(r.timeOut || "")}</td>
+        <td>${total.toFixed(2)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user){
+    window.location.href = "index.html";
+    return;
+  }
+
+  const ok = await requireAdmin(user);
+  if (!ok) return;
+
+  await loadStaffList();
+});
+
+filterBtn.addEventListener("click", async () => {
+  const uid = staffSelect.value;
+  const startISO = fromDate.value;
+  const endISO = toDate.value;
+
+  if (!uid){
+    alert("Please select a staff.");
+    return;
+  }
+  if (!startISO || !endISO){
+    alert("Please select From and To dates.");
+    return;
+  }
+  if (startISO > endISO){
+    alert("Invalid range: From date is later than To date.");
+    return;
+  }
+
+  recordsBody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+  await loadRecords(uid, startISO, endISO);
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try { await signOut(auth); } catch(e){ console.warn(e); }
+  localStorage.clear();
+  window.location.href = "index.html";
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "hosting": {
+    "site": "brewspot-dtr-system",
+    "public": "frontend",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "cleanUrls": true,
+    "trailingSlash": false
+  }
+}

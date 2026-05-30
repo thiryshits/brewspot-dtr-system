@@ -1,0 +1,5 @@
+backend/node_modules/
+backend/.env
+backend/serviceAccountKey.json
+frontend/firebase-debug.log
+npm-debug.log*

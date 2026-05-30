@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#71773d;
+  margin:0;
+}
+
+.header{
+  background:#000;
+  color:#fff;
+  padding:15px;
+  font-weight:bold;
+  text-align:center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(14px, 5vw, 24px);
+  line-height: 1.2;
+}
+
+.navbar{
+  background:#333;
+  padding:10px 12px;
+  display:flex;
+  justify-content:center;
+}
+
+.nav-links{
+  display:flex;
+  gap:10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nav-links::-webkit-scrollbar{ height: 6px; }
+.nav-links::-webkit-scrollbar-thumb{ background:#666; border-radius:10px; }
+
+.navbar a{
+  color:#fff;
+  text-decoration:none;
+  padding:10px;
+  border-radius:5px;
+  display:inline-block;
+  flex:0 0 auto;
+}
+
+.navbar a:hover{ background:#555; }
+
+.container{
+  width: min(520px, 92vw);
+  margin: 20px auto;
+  background:rgba(206,206,109,0.993);
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.avatar-wrap{
+  width:128px;
+  height:128px;
+  position:relative;
+  margin:0 auto 12px auto;
+}
+
+.profile-pic{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  background:#ccc;
+  overflow:hidden;
+  border:3px solid rgba(0,0,0,0.22);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.profile-pic img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:none;
+}
+
+.profile-initial{
+  font-size:42px;
+  font-weight:bold;
+  color:#333;
+}
+
+.camera-btn{
+  position:absolute;
+  right:2px;
+  bottom:8px;
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  border:2px solid rgba(206,206,109,0.993);
+  background:#000;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  padding:0;
+}
+
+.camera-btn:hover{
+  background:#0056b3;
+}
+
+.camera-btn svg{
+  width:20px;
+  height:20px;
+}
+
+.hidden-file{
+  display:none;
+}
+
+h2{
+  margin-top:0;
+}
+
+label{
+  display:block;
+  margin-top:10px;
+  font-weight:bold;
+}
+
+input{
+  width:100%;
+  box-sizing:border-box;
+  padding:10px;
+  margin-top:6px;
+  border:1px solid #666;
+  border-radius:6px;
+}
+
+input[readonly]{
+  background:#eee;
+  color:#333;
+  cursor:not-allowed;
+}
+
+button.update-btn{
+  width:100%;
+  box-sizing:border-box;
+  padding:10px;
+  margin-top:12px;
+  background:#000;
+  color:white;
+  border:none;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+button.update-btn:hover{
+  background:#0056b3;
+}
+
+button.update-btn:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+</style>
+</head>
+
+<body>
+  <div class="header">BREWSPOT CAFE</div>
+
+  <div class="navbar">
+    <div class="nav-links">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="timekey.html">Time Key</a>
+      <a href="request.html">Request</a>
+      <a href="payslip.html">Payslip</a>
+      <a href="profile.html">Profile</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="avatar-wrap">
+      <div class="profile-pic">
+        <span class="profile-initial" id="profileInitial">?</span>
+        <img id="profilePreview" alt="Profile picture">
+      </div>
+
+      <button class="camera-btn" id="cameraBtn" type="button" aria-label="Choose profile picture">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 7L10.5 5H13.5L15 7H18C19.1 7 20 7.9 20 9V17C20 18.1 19.1 19 18 19H6C4.9 19 4 18.1 4 17V9C4 7.9 4.9 7 6 7H9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M12 16C13.657 16 15 14.657 15 13C15 11.343 13.657 10 12 10C10.343 10 9 11.343 9 13C9 14.657 10.343 16 12 16Z" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+
+      <input id="profileImageInput" class="hidden-file" type="file" accept="image/*">
+    </div>
+
+    <h2>My Profile</h2>
+
+    <label>Name</label>
+    <input id="nameInput" type="text" placeholder="Your name">
+
+    <label>Email</label>
+    <input id="emailInput" type="email" placeholder="Your email" readonly>
+
+    <label>Employee ID</label>
+    <input id="empIdInput" type="text" placeholder="Employee ID" readonly>
+
+    <label>Area</label>
+    <input id="areaInput" type="text" placeholder="Area" readonly>
+
+    <button class="update-btn" id="updateBtn" type="button">Update Profile</button>
+  </div>
+
+<script type="module">
+import { auth, database } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { ref, get, update } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const nameInput = document.getElementById("nameInput");
+const emailInput = document.getElementById("emailInput");
+const empIdInput = document.getElementById("empIdInput");
+const areaInput = document.getElementById("areaInput");
+const profileImageInput = document.getElementById("profileImageInput");
+const profilePreview = document.getElementById("profilePreview");
+const profileInitial = document.getElementById("profileInitial");
+const cameraBtn = document.getElementById("cameraBtn");
+const updateBtn = document.getElementById("updateBtn");
+
+let currentUser = null;
+let selectedImageDataUrl = "";
+
+function setInitial(name, email){
+  const source = (name || email || "?").trim();
+  profileInitial.textContent = source ? source.charAt(0).toUpperCase() : "?";
+}
+
+function showProfileImage(url){
+  if (!url){
+    profilePreview.removeAttribute("src");
+    profilePreview.style.display = "none";
+    profileInitial.style.display = "block";
+    return;
+  }
+
+  profilePreview.src = url;
+  profilePreview.style.display = "block";
+  profileInitial.style.display = "none";
+}
+
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const img = new Image();
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const maxSize = 320;
+
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height && width > maxSize){
+          height = Math.round((height * maxSize) / width);
+          width = maxSize;
+        }else if (height > maxSize){
+          width = Math.round((width * maxSize) / height);
+          height = maxSize;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.75);
+        resolve(dataUrl);
+      };
+
+      img.onerror = () => reject(new Error("Failed to load image."));
+      img.src = reader.result;
+    };
+
+    reader.onerror = () => reject(new Error("Failed to read image."));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadUser(uid){
+  let name = "";
+  let empId = "";
+  let area = "";
+  let profileImageUrl = "";
+
+  const snap = await get(ref(database, "users/" + uid));
+
+  if (snap.exists()){
+    const data = snap.val() || {};
+
+    name = data.name || data.fullname || data.fullName || data.username || "";
+    empId = data.employeeId || data.empId || "";
+    area = data.area || "";
+    profileImageUrl = data.profileImageUrl || data.photoURL || "";
+
+    localStorage.setItem("name", name || "");
+    localStorage.setItem("empId", empId || "");
+    localStorage.setItem("area", area || "");
+    localStorage.setItem("profileImageUrl", profileImageUrl || "");
+  }
+
+  return { name, empId, area, profileImageUrl };
+}
+
+async function refreshProfileFromDatabase(uid){
+  try{
+    const info = await loadUser(uid);
+
+    nameInput.value = info.name || "";
+    empIdInput.value = info.empId || "";
+    areaInput.value = info.area || "";
+
+    setInitial(info.name || "", emailInput.value || "");
+    showProfileImage(info.profileImageUrl || "");
+  }catch(e){
+    console.warn("Profile reload failed:", e);
+
+    nameInput.value = localStorage.getItem("name") || "";
+    empIdInput.value = localStorage.getItem("empId") || "";
+    areaInput.value = localStorage.getItem("area") || "";
+
+    setInitial(nameInput.value, emailInput.value);
+    showProfileImage(localStorage.getItem("profileImageUrl") || "");
+  }
+}
+
+cameraBtn.addEventListener("click", () => {
+  profileImageInput.click();
+});
+
+profileImageInput.addEventListener("change", async () => {
+  const file = profileImageInput.files && profileImageInput.files[0];
+
+  if (!file){
+    selectedImageDataUrl = "";
+    return;
+  }
+
+  if (!file.type.startsWith("image/")){
+    alert("Please choose an image file.");
+    profileImageInput.value = "";
+    selectedImageDataUrl = "";
+    return;
+  }
+
+  if (file.size > 5 * 1024 * 1024){
+    alert("Image is too large. Please choose an image under 5MB.");
+    profileImageInput.value = "";
+    selectedImageDataUrl = "";
+    return;
+  }
+
+  try{
+    selectedImageDataUrl = await compressImage(file);
+    showProfileImage(selectedImageDataUrl);
+  }catch(e){
+    console.error(e);
+    alert("Could not prepare image. Please choose another photo.");
+    profileImageInput.value = "";
+    selectedImageDataUrl = "";
+  }
+});
+
+nameInput.addEventListener("input", () => {
+  if (!profilePreview.src && !selectedImageDataUrl){
+    setInitial(nameInput.value, emailInput.value);
+  }
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user){
+    window.location.href = "index.html";
+    return;
+  }
+
+  currentUser = user;
+
+  localStorage.setItem("uid", user.uid);
+  localStorage.setItem("email", user.email || "");
+
+  emailInput.value = user.email || "";
+  await refreshProfileFromDatabase(user.uid);
+});
+
+updateBtn.addEventListener("click", async () => {
+  if (!currentUser){
+    alert("No user session. Please login again.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  const uid = currentUser.uid;
+  const newName = nameInput.value.trim();
+
+  try{
+    updateBtn.disabled = true;
+    updateBtn.textContent = "Saving...";
+
+    const updates = {
+      name: newName,
+      updatedAt: Date.now()
+    };
+
+    if (selectedImageDataUrl){
+      updates.profileImageUrl = selectedImageDataUrl;
+    }
+
+    await update(ref(database, "users/" + uid), updates);
+
+    localStorage.setItem("name", newName);
+
+    if (selectedImageDataUrl){
+      localStorage.setItem("profileImageUrl", selectedImageDataUrl);
+    }
+
+    selectedImageDataUrl = "";
+    profileImageInput.value = "";
+
+    await refreshProfileFromDatabase(uid);
+
+    alert("Profile saved successfully!");
+  }catch(e){
+    console.error(e);
+    alert("Failed to save profile. Check Firebase Database rules.");
+  }finally{
+    updateBtn.disabled = false;
+    updateBtn.textContent = "Update Profile";
+  }
+});
+</script>
+</body>
+</html>

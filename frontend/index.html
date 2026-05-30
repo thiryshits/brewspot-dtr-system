@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+  <h2>BREWSPOT DTR SYSTEM</h2>
+
+  <input type="text" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+
+  <label style="
+        display:flex;
+        justify-content:flex-start;
+        align-items:baseline;
+        gap:0px;
+        margin-top:0px;
+        font-size:15px;
+        width:10%;
+        white-space:nowrap;">
+    <input type="checkbox" onclick="togglePassword()">
+    Show Password
+  </label>
+
+  <button onclick="login()">Login</button>
+
+  <p>No account? <a href="register.html">Register</a></p>
+</div>
+
+<script type="module">
+import { auth, database } from "./firebase.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { ref, get } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const ADMIN_UID = "LTAn0CqX4LSJP6TZIxgsFwXHJuM2";
+
+window.login = async function () {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+    alert("Please enter email and password");
+    return;
+  }
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    localStorage.setItem("uid", user.uid);
+    localStorage.setItem("email", user.email || email);
+
+    // Default values
+    let role = (user.uid === ADMIN_UID) ? "admin" : "staff";
+    let name = "";
+
+    // Try to load role/name from DB
+    try {
+      const snap = await get(ref(database, "users/" + user.uid));
+      if (snap.exists()) {
+        const userData = snap.val() || {};
+        role = (user.uid === ADMIN_UID) ? "admin" : (userData.role || role);
+        name = userData.name || userData.fullname || userData.fullName || userData.username || "";
+      }
+    } catch (e) {
+      console.warn("Could not read user profile data:", e);
+      // still keep admin role if UID matches
+      if (user.uid === ADMIN_UID) role = "admin";
+    }
+
+    localStorage.setItem("role", role);
+    localStorage.setItem("name", name);
+
+    // Redirect by role
+    if (role === "admin") window.location.href = "admin.html";
+    else window.location.href = "dashboard.html";
+
+  } catch (error) {
+    alert(error.message);
+  }
+};
+
+window.togglePassword = function () {
+  const pass = document.getElementById("password");
+  pass.type = pass.type === "password" ? "text" : "password";
+};
+</script>
+
+</body>
+</html>

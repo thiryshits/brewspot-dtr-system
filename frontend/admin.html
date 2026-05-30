@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard</title>
+
+<style>
+  :root{
+    --bg:#71773d;
+    --panel:rgba(206,206,109,0.993);
+    --card:rgba(255,255,255,0.70);
+    --dark:#000;
+    --nav:#333;
+    --navHover:#555;
+    --border:rgba(0,0,0,0.15);
+    --danger:#c62828;
+    --dangerHover:#b71c1c;
+    --ok:#0f6c2f;
+    --okHover:#0c5a27;
+  }
+
+  body{ font-family: Arial; background:var(--bg); margin:0; color:#111; }
+  .header{
+    background:var(--dark); color:#fff; padding:15px; font-weight:bold; text-align:center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: clamp(14px, 5vw, 24px); line-height: 1.2;
+  }
+
+  .navbar{
+    background:var(--nav);
+    padding:10px 12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .nav-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex:1;
+    justify-content:center;
+    flex-wrap: nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    white-space:nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-left::-webkit-scrollbar{ height: 6px; }
+  .nav-left::-webkit-scrollbar-thumb{ background:#666; border-radius:10px; }
+  .navbar a{
+    color:white; text-decoration:none; padding:10px; border-radius:5px;
+    display:inline-block; flex:0 0 auto;
+  }
+  .navbar a:hover{ background:var(--navHover); }
+
+  .logout-btn{
+    background:var(--danger); color:#fff; border:none;
+    padding:10px 14px; border-radius:6px;
+    cursor:pointer; white-space:nowrap; flex:0 0 auto;
+  }
+  .logout-btn:hover{ background:var(--dangerHover); }
+
+  .container{
+    width:95%;
+    margin:20px auto;
+    background:var(--panel);
+    padding:18px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,0.1);
+  }
+
+  .title-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .title-row h2{ margin:0; }
+  .muted{ opacity:0.85; font-size:14px; }
+
+  .tabs{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    white-space:nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom:6px;
+  }
+  .tabs::-webkit-scrollbar{ height:6px; }
+  .tabs::-webkit-scrollbar-thumb{ background:#666; border-radius:10px; }
+  .tab{
+    border:none;
+    background:rgba(0,0,0,0.12);
+    padding:10px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    flex:0 0 auto;
+  }
+  .tab.active{ background:#000; color:#fff; }
+  .tab-panel{ display:none; margin-top:14px; }
+  .tab-panel.active{ display:block; }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:12px;
+  }
+  @media (max-width: 900px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+  }
+  .card h3{ margin:0 0 10px 0; }
+
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:end;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:220px;
+    flex:1;
+  }
+
+  label{ font-weight:bold; }
+
+  input, select{
+    padding:10px;
+    border-radius:8px;
+    border:1px solid rgba(0,0,0,0.25);
+    width:100%;
+    box-sizing:border-box;
+    background:#fff;
+  }
+
+  .btn{
+    padding:10px 14px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    white-space:nowrap;
+  }
+  .btn.primary{ background:#000; color:#fff; }
+  .btn.primary:hover{ opacity:0.9; }
+  .btn.ok{ background:var(--ok); color:#fff; }
+  .btn.ok:hover{ background:var(--okHover); }
+  .btn.danger{ background:var(--danger); color:#fff; }
+  .btn.danger:hover{ background:var(--dangerHover); }
+  .btn.ghost{ background:rgba(0,0,0,0.10); }
+  .btn.ghost:hover{ background:rgba(0,0,0,0.15); }
+
+  .help{ font-size:13px; opacity:0.85; margin-top:8px; }
+  .small{ font-size:12px; opacity:0.85; }
+
+  .kpi-grid{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap:12px;
+  }
+  @media (max-width: 1050px){ .kpi-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 520px){ .kpi-grid{ grid-template-columns: 1fr; } }
+
+  .kpi{
+    background:rgba(255,255,255,0.65);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+  }
+  .kpi .label{ font-weight:bold; }
+  .kpi .value{ font-size:28px; font-weight:bold; margin-top:6px; }
+
+  .table-wrap{ width:100%; overflow-x:auto; margin-top:10px; }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width: 900px;
+    background:rgba(255,255,255,0.55);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  th{ background:#000; color:#fff; }
+  th,td{ border:1px solid #000; padding:10px; text-align:center; vertical-align:middle; }
+
+  .pill{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:bold;
+  }
+  .pill.pending{ background:rgba(255, 193, 7, 0.35); }
+  .pill.approved{ background:rgba(76, 175, 80, 0.35); }
+  .pill.rejected{ background:rgba(244, 67, 54, 0.35); }
+
+  .staff-controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:end;
+  }
+</style>
+</head>
+
+<body>
+  <div class="header">BREWSPOT CAFE - ADMIN</div>
+
+  <div class="navbar">
+    <div class="nav-left">
+      <a href="admin.html">Admin Dashboard</a>
+      <a href="admin-staff-dashboard.html">Staff Dashboard</a>
+    </div>
+    <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
+  </div>
+
+  <div class="container">
+    <div class="title-row">
+      <h2>Admin Overview</h2>
+      <div class="muted" id="adminStatus">Loading admin session...</div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="tab-overview" type="button">Overview</button>
+      <button class="tab" data-tab="tab-cutoff" type="button">Cutoff</button>
+      <button class="tab" data-tab="tab-requests" type="button">Requests</button>
+      <button class="tab" data-tab="tab-schedules" type="button">Area</button>
+      <button class="tab" data-tab="tab-employees" type="button">Employees</button>
+      <button class="tab" data-tab="tab-rates" type="button">Rates</button>
+      <button class="tab" data-tab="tab-multipliers" type="button">Payslip Multipliers</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-overview">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="label">Cutoff</div>
+          <div class="value" id="kpiCutoff">--/--/---- - --/--/----</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Pending Requests</div>
+          <div class="value" id="kpiPending">0</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Total Staff</div>
+          <div class="value" id="kpiStaff">0</div>
+        </div>
+      </div>
+
+      <div class="help" style="margin-top:10px;">
+      </div>
+
+      <div class="help">
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-cutoff">
+      <div class="grid">
+        <div class="card">
+          <h3>Set Cutoff Date Range</h3>
+          <div class="row">
+            <div class="field">
+              <label for="cutoffStart">Start date</label>
+              <input id="cutoffStart" type="date" />
+            </div>
+            <div class="field">
+              <label for="cutoffEnd">End date</label>
+              <input id="cutoffEnd" type="date" />
+            </div>
+            <button class="btn primary" id="saveCutoffBtn" type="button">Save Cutoff</button>
+          </div>
+          <div class="help small"><span id="cutoffDisplay"></span></div>
+        </div>
+
+        <div class="card">
+          <h3>Note</h3>
+          <div class="help">
+            This cutoff date will be used by staff dashboard and payslip computations.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-requests">
+      <div class="card">
+        <h3>Time Change Requests</h3>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Created</th>
+                <th>Staff</th>
+                <th>Date</th>
+                <th>New Time In</th>
+                <th>New Time Out</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="requestsBody">
+              <tr><td colspan="8">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-schedules">
+      <div class="card">
+        <div class="title-row" style="margin-bottom:10px;">
+          <h3 style="margin:0;">Area Shift Schedules</h3>
+          <button class="btn primary" id="addScheduleBtn" type="button">Add Schedule</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Shift Start (HH:MM)</th>
+                <th>Shift End (HH:MM)</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="schedulesBody">
+              <tr><td colspan="4">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="help small">
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-employees">
+      <div class="card">
+        <h3>Employees (Set Employee ID and Area)</h3>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>UID</th>
+                <th>Employee ID</th>
+                <th>Area</th>
+                <th>Save</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody id="employeesBody">
+              <tr><td colspan="7">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="help small">
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-rates">
+      <div class="card">
+        <h3>Hourly Rates</h3>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>UID</th>
+                <th>Hourly Rate</th>
+                <th>Save</th>
+              </tr>
+            </thead>
+            <tbody id="ratesBody">
+              <tr><td colspan="5">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-multipliers">
+      <div class="card">
+        <h3>Payslip Multipliers</h3>
+
+        <div class="grid" style="margin-top:10px;">
+          <div class="card">
+            <h3 style="margin-top:0;">Overtime</h3>
+            <div class="row">
+              <div class="field">
+                <label>Early OT</label>
+                <input id="mEarlyOT" type="number" step="0.01" placeholder="1.25">
+              </div>
+              <div class="field">
+                <label>Overtime</label>
+                <input id="mOvertime" type="number" step="0.01" placeholder="1.25">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0;">Holiday</h3>
+            <div class="row">
+              <div class="field">
+                <label>Special Holiday</label>
+                <input id="mSpecHol" type="number" step="0.01" placeholder="1.30">
+              </div>
+              <div class="field">
+                <label>Special Holiday OT</label>
+                <input id="mSpecHolOT" type="number" step="0.01" placeholder="1.69">
+              </div>
+              <div class="field">
+                <label>Regular Holiday</label>
+                <input id="mRegHol" type="number" step="0.01" placeholder="2.00">
+              </div>
+              <div class="field">
+                <label>Regular Holiday OT</label>
+                <input id="mRegHolOT" type="number" step="0.01" placeholder="2.60">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0;">Rest Day</h3>
+            <div class="row">
+              <div class="field">
+                <label>Restday OT (first 8 hrs)</label>
+                <input id="mRestdayOT" type="number" step="0.01" placeholder="1.30">
+              </div>
+              <div class="field">
+                <label>Restday OT OT (over 8 hrs)</label>
+                <input id="mRestdayOTOT" type="number" step="0.01" placeholder="1.69">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0;">Save</h3>
+            <button class="btn primary" id="saveMultipliersBtn" type="button">Save Multipliers</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script type="module">
+import { auth, database } from "./firebase.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { ref, get, update, set } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+function mmddyyyyFromISO(iso){
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "--/--/----";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function safeText(v){
+  return String(v ?? "");
+}
+
+function statusPill(status){
+  const s = (status || "pending").toLowerCase();
+  const cls = (s === "approved" || s === "rejected") ? s : "pending";
+  return `<span class="pill ${cls}">${cls.toUpperCase()}</span>`;
+}
+
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  });
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try { await signOut(auth); } catch(e){ console.warn(e); }
+  localStorage.clear();
+  window.location.href = "index.html";
+});
+
+const adminStatus = document.getElementById("adminStatus");
+const cutoffStart = document.getElementById("cutoffStart");
+const cutoffEnd = document.getElementById("cutoffEnd");
+const cutoffDisplay = document.getElementById("cutoffDisplay");
+const cutoffKPI = document.getElementById("kpiCutoff");
+const kpiPending = document.getElementById("kpiPending");
+const kpiStaff = document.getElementById("kpiStaff");
+
+const requestsBody = document.getElementById("requestsBody");
+const schedulesBody = document.getElementById("schedulesBody");
+const employeesBody = document.getElementById("employeesBody");
+const ratesBody = document.getElementById("ratesBody");
+
+const mEarlyOT = document.getElementById("mEarlyOT");
+const mOvertime = document.getElementById("mOvertime");
+const mSpecHol = document.getElementById("mSpecHol");
+const mSpecHolOT = document.getElementById("mSpecHolOT");
+const mRegHol = document.getElementById("mRegHol");
+const mRegHolOT = document.getElementById("mRegHolOT");
+const mRestdayOT = document.getElementById("mRestdayOT");
+const mRestdayOTOT = document.getElementById("mRestdayOTOT");
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user){
+    window.location.href = "index.html";
+    return;
+  }
+
+  let role = "";
+  try{
+    const snap = await get(ref(database, "users/" + user.uid + "/role"));
+    if (snap.exists()) role = snap.val();
+  }catch(e){
+    console.warn("Role read failed:", e);
+  }
+
+  if (role !== "admin"){
+    alert("Access denied. Admin only.");
+    window.location.href = "dashboard.html";
+    return;
+  }
+
+  adminStatus.textContent = `Signed in as admin: ${user.email || user.uid}`;
+
+  await ensureSeed();
+  await refreshAll();
+});
+
+async function ensureSeed(){
+  const sch = await get(ref(database, "settings/areaSchedules"));
+  if (!sch.exists()){
+    await set(ref(database, "settings/areaSchedules"), {
+      CAFE: { start:"15:00", end:"23:00" },
+      STEAK: { start:"16:00", end:"24:00" }
+    });
+  }
+
+  const cutoff = await get(ref(database, "settings/cutoff"));
+  if (!cutoff.exists()){
+    await set(ref(database, "settings/cutoff"), { start:"2026-05-26", end:"2026-06-10" });
+  }
+}
+
+async function refreshAll(){
+  await loadCutoff();
+  await loadRequests();
+  await loadSchedules();
+  await loadEmployeesAndRates();
+  await loadMultipliers();
+  await refreshOverviewKPIs();
+}
+
+async function refreshOverviewKPIs(){
+  const cutoffSnap = await get(ref(database, "settings/cutoff"));
+  const cutoff = cutoffSnap.exists() ? (cutoffSnap.val() || {}) : {};
+  const display = `${mmddyyyyFromISO(cutoff.start || "")} - ${mmddyyyyFromISO(cutoff.end || "")}`;
+  cutoffKPI.textContent = display;
+  cutoffDisplay.textContent = display;
+
+  const reqSnap = await get(ref(database, "requests"));
+  const reqs = reqSnap.exists() ? (reqSnap.val() || {}) : {};
+  const pendingCount = Object.values(reqs).filter(r => (r?.status || "pending") === "pending").length;
+  kpiPending.textContent = String(pendingCount);
+
+  const usersSnap = await get(ref(database, "users"));
+  const users = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+  const staffCount = Object.values(users).filter(u => (u?.role || "staff") !== "admin").length;
+  kpiStaff.textContent = String(staffCount);
+}
+
+async function loadCutoff(){
+  const snap = await get(ref(database, "settings/cutoff"));
+  const data = snap.exists() ? (snap.val() || {}) : {};
+  cutoffStart.value = data.start || "";
+  cutoffEnd.value = data.end || "";
+  const display = `${mmddyyyyFromISO(data.start || "")} - ${mmddyyyyFromISO(data.end || "")}`;
+  cutoffDisplay.textContent = display;
+  cutoffKPI.textContent = display;
+}
+
+document.getElementById("saveCutoffBtn").addEventListener("click", async () => {
+  const start = cutoffStart.value;
+  const end = cutoffEnd.value;
+  if (!start || !end){ alert("Please select start and end date."); return; }
+  if (start > end){ alert("Invalid range: Start date is later than End date."); return; }
+  await set(ref(database, "settings/cutoff"), { start, end });
+  await refreshOverviewKPIs();
+  alert("Cutoff saved!");
+});
+
+async function loadRequests(){
+  const snap = await get(ref(database, "requests"));
+  const all = snap.exists() ? (snap.val() || {}) : {};
+  const rows = Object.entries(all).map(([id, r]) => ({ id, ...r }));
+  rows.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  if (rows.length === 0){
+    requestsBody.innerHTML = `<tr><td colspan="8">No requests found.</td></tr>`;
+    return;
+  }
+
+  const usersSnap = await get(ref(database, "users"));
+  const users = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+
+  requestsBody.innerHTML = rows.map(r => {
+    const u = users[r.uid] || {};
+    const staffLabel = safeText(u.name || u.fullName || u.fullname || u.username || u.email || r.uid);
+    const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
+    const dateDisplay = r.date ? mmddyyyyFromISO(r.date) : "--/--/----";
+    const status = (r.status || "pending").toLowerCase();
+
+    const actions = status === "pending"
+      ? `
+        <button class="btn ok" data-approve="${r.id}" type="button">Approve</button>
+        <button class="btn danger" data-reject="${r.id}" type="button">Reject</button>
+      `
+      : `<span class="small">No action</span>`;
+
+    return `
+      <tr>
+        <td>${safeText(created)}</td>
+        <td>${safeText(staffLabel)}</td>
+        <td>${safeText(dateDisplay)}</td>
+        <td>${safeText(r.newTimeIn || "")}</td>
+        <td>${safeText(r.newTimeOut || "")}</td>
+        <td>${safeText(r.reason || "")}</td>
+        <td>${statusPill(r.status)}</td>
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join("");
+
+  requestsBody.querySelectorAll("[data-approve]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-approve");
+      const reqSnap = await get(ref(database, "requests/" + id));
+
+      if (!reqSnap.exists()){
+        alert("Request not found. Please refresh and try again.");
+        return;
+      }
+
+      const request = reqSnap.val() || {};
+
+      if (!request.uid || !request.date){
+        alert("Cannot approve: request is missing staff account or date.");
+        return;
+      }
+
+      const reviewedAt = Date.now();
+
+      const updates = {
+        ["requests/" + id + "/status"]: "approved",
+        ["requests/" + id + "/reviewedAt"]: reviewedAt,
+        ["timeRecords/" + request.uid + "/" + request.date + "/timeIn"]: request.newTimeIn || "",
+        ["timeRecords/" + request.uid + "/" + request.date + "/timeOut"]: request.newTimeOut || "",
+        ["timeRecords/" + request.uid + "/" + request.date + "/area"]: request.area || "",
+        ["timeRecords/" + request.uid + "/" + request.date + "/sourceRequestId"]: id,
+        ["timeRecords/" + request.uid + "/" + request.date + "/updatedAt"]: reviewedAt
+      };
+
+      await update(ref(database), updates);
+      await loadRequests();
+      await refreshOverviewKPIs();
+
+      alert("Request approved and staff time record updated!");
+    });
+  });
+
+  requestsBody.querySelectorAll("[data-reject]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.getAttribute("data-reject");
+      await update(ref(database, "requests/" + id), {
+        status:"rejected",
+        reviewedAt: Date.now()
+      });
+      await loadRequests();
+      await refreshOverviewKPIs();
+    });
+  });
+}
+
+async function loadSchedules(){
+  const snap = await get(ref(database, "settings/areaSchedules"));
+  const data = snap.exists() ? (snap.val() || {}) : {};
+  const areas = Object.keys(data).sort();
+
+  if (areas.length === 0){
+    schedulesBody.innerHTML = `<tr><td colspan="4">No schedules yet.</td></tr>`;
+    return;
+  }
+
+  schedulesBody.innerHTML = areas.map(area => {
+    const s = data[area] || {};
+    return `
+      <tr>
+        <td><b>${safeText(area)}</b></td>
+        <td><input data-sch-start="${safeText(area)}" value="${safeText(s.start || "")}" placeholder="HH:MM"></td>
+        <td><input data-sch-end="${safeText(area)}" value="${safeText(s.end || "")}" placeholder="HH:MM"></td>
+        <td>
+          <button class="btn primary" data-sch-save="${safeText(area)}" type="button">Save</button>
+          <button class="btn ghost" data-sch-del="${safeText(area)}" type="button">Remove</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  schedulesBody.querySelectorAll("[data-sch-save]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const area = btn.getAttribute("data-sch-save");
+      const start = schedulesBody.querySelector(`[data-sch-start="${CSS.escape(area)}"]`).value.trim();
+      const end = schedulesBody.querySelector(`[data-sch-end="${CSS.escape(area)}"]`).value.trim();
+
+      if (!start || !end){
+        alert("Please fill shift start and end.");
+        return;
+      }
+
+      await update(ref(database, "settings/areaSchedules/" + area), { start, end });
+      await loadSchedules();
+      alert("Schedule saved!");
+    });
+  });
+
+  schedulesBody.querySelectorAll("[data-sch-del]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const area = btn.getAttribute("data-sch-del");
+
+      if (!confirm(`Remove schedule for ${area}?`)) return;
+
+      await set(ref(database, "settings/areaSchedules/" + area), null);
+      await loadSchedules();
+    });
+  });
+}
+
+document.getElementById("addScheduleBtn").addEventListener("click", async () => {
+  const area = prompt("Enter new AREA name (example: BAR, KITCHEN):");
+  if (!area) return;
+
+  const clean = area.trim().toUpperCase();
+  if (!clean) return;
+
+  await update(ref(database, "settings/areaSchedules/" + clean), { start:"", end:"" });
+  await loadSchedules();
+});
+
+async function loadEmployeesAndRates(){
+  const usersSnap = await get(ref(database, "users"));
+  const users = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+
+  const areaSnap = await get(ref(database, "settings/areaSchedules"));
+  const areasObj = areaSnap.exists() ? (areaSnap.val() || {}) : {};
+  const areas = Object.keys(areasObj).sort();
+
+  const rows = Object.entries(users)
+    .map(([uid, u]) => ({ uid, ...u }))
+    .filter(u => (u.role || "staff").toLowerCase() !== "admin");
+
+  rows.sort((a,b) => safeText(a.email).localeCompare(safeText(b.email)));
+
+  if (rows.length === 0){
+    employeesBody.innerHTML = `<tr><td colspan="7">No staff users found.</td></tr>`;
+    ratesBody.innerHTML = `<tr><td colspan="5">No staff users found.</td></tr>`;
+    return;
+  }
+
+  employeesBody.innerHTML = rows.map(u => {
+    const name = u.name || u.fullName || u.fullname || u.username || "";
+    const email = u.email || "";
+    const areaOptions = [`<option value="">-- Select --</option>`]
+      .concat(areas.map(a => `<option ${u.area===a ? "selected" : ""} value="${a}">${a}</option>`))
+      .join("");
+
+    return `
+      <tr>
+        <td>${safeText(name)}</td>
+        <td>${safeText(email)}</td>
+        <td class="small">${safeText(u.uid)}</td>
+        <td><input data-empid="${safeText(u.uid)}" value="${safeText(u.employeeId || u.empId || "")}" placeholder="EMP001"></td>
+        <td><select data-area="${safeText(u.uid)}">${areaOptions}</select></td>
+        <td><button class="btn primary" data-save-emp="${safeText(u.uid)}" type="button">Save</button></td>
+        <td><button class="btn danger" data-del-emp="${safeText(u.uid)}" type="button">Delete</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  ratesBody.innerHTML = rows.map(u => {
+    const name = u.name || u.fullName || u.fullname || u.username || "";
+    const email = u.email || "";
+
+    return `
+      <tr>
+        <td>${safeText(name)}</td>
+        <td>${safeText(email)}</td>
+        <td class="small">${safeText(u.uid)}</td>
+        <td><input data-rate="${safeText(u.uid)}" type="number" step="0.01" value="${safeText(u.hourlyRate ?? "")}" placeholder="e.g. 100"></td>
+        <td><button class="btn primary" data-save-rate="${safeText(u.uid)}" type="button">Save</button></td>
+      </tr>
+    `;
+  }).join("");
+
+  employeesBody.querySelectorAll("[data-save-emp]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const uid = btn.getAttribute("data-save-emp");
+      const empId = employeesBody.querySelector(`[data-empid="${CSS.escape(uid)}"]`).value.trim();
+      const area = employeesBody.querySelector(`[data-area="${CSS.escape(uid)}"]`).value;
+
+      await update(ref(database, "users/" + uid), { employeeId: empId, area });
+      alert("Employee updated!");
+
+      await loadEmployeesAndRates();
+      await refreshOverviewKPIs();
+    });
+  });
+
+  employeesBody.querySelectorAll("[data-del-emp]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const uid = btn.getAttribute("data-del-emp");
+      const row = rows.find(r => r.uid === uid) || {};
+      const label = row.email || row.name || uid;
+
+      if (!confirm(`Delete employee record for: ${label}?\n\nThis will remove users/${uid} from the database.`)) return;
+
+      await set(ref(database, "users/" + uid), null);
+      alert("Employee deleted from database!");
+
+      await loadEmployeesAndRates();
+      await refreshOverviewKPIs();
+    });
+  });
+
+  ratesBody.querySelectorAll("[data-save-rate]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const uid = btn.getAttribute("data-save-rate");
+      const rateStr = ratesBody.querySelector(`[data-rate="${CSS.escape(uid)}"]`).value.trim();
+      const rate = rateStr === "" ? null : Number(rateStr);
+
+      if (rateStr !== "" && (Number.isNaN(rate) || rate < 0)){
+        alert("Invalid hourly rate.");
+        return;
+      }
+
+      await update(ref(database, "users/" + uid), { hourlyRate: rate });
+      alert("Rate saved!");
+
+      await loadEmployeesAndRates();
+    });
+  });
+}
+
+async function loadMultipliers(){
+  const snap = await get(ref(database, "settings/multipliers"));
+  const m = snap.exists() ? (snap.val() || {}) : {};
+
+  mEarlyOT.value = m.earlyOT ?? "";
+  mOvertime.value = m.overtime ?? "";
+  mSpecHol.value = m.specialHoliday ?? "";
+  mSpecHolOT.value = m.specialHolidayOT ?? "";
+  mRegHol.value = m.regularHoliday ?? "";
+  mRegHolOT.value = m.regularHolidayOT ?? "";
+  mRestdayOT.value = m.restdayOT ?? "";
+  mRestdayOTOT.value = m.restdayOTOT ?? "";
+}
+
+document.getElementById("saveMultipliersBtn").addEventListener("click", async () => {
+  function numOrNull(v){
+    const s = String(v || "").trim();
+    if (s === "") return null;
+
+    const n = Number(s);
+    if (Number.isNaN(n) || n < 0) return null;
+
+    return n;
+  }
+
+  const payload = {
+    earlyOT: numOrNull(mEarlyOT.value),
+    overtime: numOrNull(mOvertime.value),
+    specialHoliday: numOrNull(mSpecHol.value),
+    specialHolidayOT: numOrNull(mSpecHolOT.value),
+    regularHoliday: numOrNull(mRegHol.value),
+    regularHolidayOT: numOrNull(mRegHolOT.value),
+    restdayOT: numOrNull(mRestdayOT.value),
+    restdayOTOT: numOrNull(mRestdayOTOT.value),
+    updatedAt: Date.now()
+  };
+
+  await update(ref(database, "settings/multipliers"), payload);
+  alert("Multipliers saved!");
+});
+</script>
+
+</body>
+</html>

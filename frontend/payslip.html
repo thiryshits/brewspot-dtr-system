@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payslip</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#71773d;
+  margin:0;
+}
+
+/* 1-line responsive header */
+.header{
+  background:#000;
+  color:#fff;
+  padding:15px;
+  font-weight:bold;
+  text-align:center;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  font-size: clamp(14px, 5vw, 24px);
+  line-height: 1.2;
+}
+
+/* NAVBAR: centered links, no logout */
+.navbar{
+  background:#333;
+  padding:10px 12px;
+
+  display:flex;
+  justify-content:center;
+}
+.nav-links{
+  display:flex;
+  gap:10px;
+
+  flex-wrap: nowrap;
+  overflow-x:auto;         /* keep 1 line on mobile */
+  overflow-y:hidden;
+  white-space:nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+.nav-links::-webkit-scrollbar{ height: 6px; }
+.nav-links::-webkit-scrollbar-thumb{ background:#666; border-radius:10px; }
+
+.navbar a{
+  color:#fff;
+  text-decoration:none;
+  padding:10px;
+  border-radius:5px;
+  display:inline-block;
+  flex:0 0 auto;
+}
+.navbar a:hover{ background:#555; }
+
+.container{
+  width:95%;
+  margin:20px auto;
+  background:rgba(206,206,109,0.993);
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+.meta p{ margin:6px 0; }
+
+.empty{
+  margin-top:12px;
+  padding:12px;
+  background:rgba(255,255,255,0.6);
+  border-radius:8px;
+  font-weight:bold;
+}
+.small-note{
+  margin-top:8px;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+<div class="header">BREWSPOT CAFE</div>
+
+<div class="navbar">
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="timekey.html">Time Key</a>
+    <a href="request.html">Request</a>
+    <a href="payslip.html">Payslip</a>
+    <a href="profile.html">Profile</a>
+  </div>
+</div>
+
+<div class="container">
+  <h2>Payslip</h2>
+
+  <div class="meta">
+    <p><b>Name:</b> <span id="psName">Loading...</span></p>
+    <p><b>Email:</b> <span id="psEmail">Loading...</span></p>
+  </div>
+
+  <div id="noPayslip" class="empty" style="display:none;">
+    No payslip record yet.
+  </div>
+
+  <div class="small-note">
+    (This will show once your admin/system saves payslip is availabe.)
+  </div>
+</div>
+
+<script type="module">
+import { auth, database } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { ref, get } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+function setText(id, value){
+  document.getElementById(id).textContent = value;
+}
+
+async function loadUserName(uid){
+  let name = localStorage.getItem("name") || "";
+
+  try{
+    const snap = await get(ref(database, "users/" + uid));
+    if (snap.exists()){
+      const data = snap.val() || {};
+      name = data.name || data.fullname || data.fullName || data.username || name;
+      localStorage.setItem("name", name || "");
+    }
+  }catch(e){
+    console.warn("DB profile read failed:", e);
+  }
+
+  return name;
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user){
+    window.location.href = "index.html";
+    return;
+  }
+
+  const email = user.email || localStorage.getItem("email") || "Not set";
+  setText("psEmail", email);
+
+  const name = await loadUserName(user.uid);
+  setText("psName", name || "Not set");
+
+  // Until you connect payslip records to Firebase:
+  document.getElementById("noPayslip").style.display = "block";
+});
+</script>
+</body>
+</html>

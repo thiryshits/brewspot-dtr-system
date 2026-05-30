@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Staff Registration</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h2>STAFF REGISTRATION</h2>
+
+    <input type="text" id="name" placeholder="Full Name">
+
+    <input type="email" id="email" placeholder="Email">
+
+    <!-- PASSWORD -->
+    <input type="password" id="password" placeholder="Password">
+
+    <label style="
+        display:flex;
+        justify-content:flex-start;
+        align-items:baseline;
+        gap:0px;
+        margin-top:0px;
+        font-size:15px;
+        width:10%;
+        white-space:nowrap;
+    ">
+        <input type="checkbox" onclick="togglePassword()">
+        Show Password
+    </label>
+
+    <!-- CONFIRM PASSWORD -->
+    <input type="password" id="confirmPassword" placeholder="Verify Password">
+
+    <label style="
+        display:flex;
+        justify-content:flex-start;
+        align-items:baseline;
+        gap:0px;
+        margin-top:0px;
+        font-size:15px;
+        width:10%;
+        white-space:nowrap;">
+        <input type="checkbox" onclick="toggleConfirmPassword()">
+        Show Confirm Password
+    </label>
+
+    <button onclick="register()">Register</button>
+
+    <p>
+        Already have account?
+        <a href="login.html">Login</a>
+    </p>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+    getAuth,
+    createUserWithEmailAndPassword
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+
+import {
+    getDatabase,
+    ref,
+    set
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAhjwELYhK2fTYQ5rMQLOv8sfNlbnpREHA",
+  authDomain: "brewspot-dtr-system.firebaseapp.com",
+  databaseURL: "https://brewspot-dtr-system-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "brewspot-dtr-system",
+  storageBucket: "brewspot-dtr-system.firebasestorage.app",
+  messagingSenderId: "643659198322",
+  appId: "1:643659198322:web:b682e16d95c7501ce8f7eb"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+const database = getDatabase(app);
+
+window.register = async function(){
+
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if(password !== confirmPassword){
+        alert("Passwords do not match");
+        return;
+    }
+
+    try{
+
+        const userCredential =
+        await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
+
+        const user = userCredential.user;
+
+        await set(ref(database, 'users/' + user.uid), {
+            name:name,
+            email:email,
+            role:"staff"
+        });
+
+        alert("Registration Successful");
+
+        window.location = "index.html";
+
+    }catch(error){
+        alert(error.message);
+    }
+
+}
+
+/* PASSWORD TOGGLE */
+window.togglePassword = function(){
+    const pass = document.getElementById("password");
+    pass.type = pass.type === "password" ? "text" : "password";
+};
+
+window.toggleConfirmPassword = function(){
+    const pass = document.getElementById("confirmPassword");
+    pass.type = pass.type === "password" ? "text" : "password";
+};
+
+</script>
+
+</body>
+</html>

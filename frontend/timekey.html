@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Key</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#71773d;
+  margin:0;
+}
+
+.header{
+  background:#000;
+  color:#fff;
+  padding:15px;
+  font-weight:bold;
+  text-align:center;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:clamp(14px, 5vw, 24px);
+  line-height:1.2;
+}
+
+.navbar{
+  background:#333;
+  text-align:center;
+  padding:10px;
+}
+
+.navbar a{
+  color:#fff;
+  text-decoration:none;
+  margin:10px;
+  padding:10px;
+  display:inline-block;
+}
+
+.navbar a:hover{
+  background:#555;
+  border-radius:5px;
+}
+
+.container{
+  width:95%;
+  margin:20px auto;
+  background:rgba(206,206,109,.993);
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+
+.toolbar{
+  display:flex;
+  justify-content:flex-start;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+button{
+  padding:10px 14px;
+  cursor:pointer;
+  border:none;
+  border-radius:6px;
+  font-weight:bold;
+}
+
+#openFilterBtn{
+  background:#000;
+  color:#fff;
+}
+
+#clearFilterBtn{
+  background:#000;
+  color:#fff;
+}
+
+.filter-panel{
+  display:none;
+  background:rgba(255,255,255,.65);
+  border:1px solid rgba(0,0,0,.2);
+  border-radius:8px;
+  padding:12px;
+  margin-bottom:12px;
+}
+
+.filter-panel.active{
+  display:block;
+}
+
+.filter-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:end;
+}
+
+.field{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:180px;
+}
+
+.field label{
+  font-weight:bold;
+}
+
+.field input{
+  padding:10px;
+  border:1px solid #666;
+  border-radius:6px;
+}
+
+#applyFilterBtn{
+  background:#000;
+  color:#fff;
+}
+
+#cancelFilterBtn{
+  background:#000;
+  color:#fff;
+}
+
+.filter-status{
+  margin-top:8px;
+  font-size:13px;
+  opacity:.85;
+}
+
+.table-wrap{
+  width:100%;
+  overflow-x:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:900px;
+}
+
+th{
+  background:#000;
+  color:#fff;
+}
+
+th,td{
+  border:1px solid #000;
+  padding:10px;
+  text-align:center;
+}
+
+.empty{
+  padding:12px;
+  background:rgba(255,255,255,.6);
+  border-radius:8px;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+<div class="header">BREWSPOT CAFE</div>
+
+<div class="navbar">
+  <a href="dashboard.html">Dashboard</a>
+  <a href="timekey.html">Time Key</a>
+  <a href="request.html">Request</a>
+  <a href="payslip.html">Payslip</a>
+  <a href="profile.html">Profile</a>
+</div>
+
+<div class="container">
+  <h2>Attendance Record</h2>
+
+  <div class="toolbar">
+    <button id="openFilterBtn" type="button">Filter</button>
+    <button id="clearFilterBtn" type="button">Clear Filter</button>
+  </div>
+
+  <div id="filterPanel" class="filter-panel">
+    <div class="filter-row">
+      <div class="field">
+        <label for="fromDate">From Date</label>
+        <input id="fromDate" type="date">
+      </div>
+
+      <div class="field">
+        <label for="toDate">To Date</label>
+        <input id="toDate" type="date">
+      </div>
+
+      <button id="applyFilterBtn" type="button">Apply Filter</button>
+      <button id="cancelFilterBtn" type="button">Cancel</button>
+    </div>
+
+    <div class="filter-status" id="filterStatus">No filter applied.</div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="attendanceTable">
+      <thead>
+        <tr>
+          <th>DATE</th>
+          <th>NAME</th>
+          <th>AREA</th>
+          <th>TIME IN</th>
+          <th>TIME OUT</th>
+          <th>WORK HRS</th>
+          <th>EARLY OT</th>
+          <th>OT</th>
+          <th>REST DAY OT</th>
+          <th>REG HOL</th>
+          <th>SPEC HOL</th>
+          <th>TARDINESS</th>
+          <th>UNDERTIME</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceBody">
+        <!-- rows inserted by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <div id="emptyState" class="empty" style="display:none;">
+    No attendance records found yet.
+  </div>
+</div>
+
+<script type="module">
+import { auth, database } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
+import { ref, get } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const tbody = document.getElementById("attendanceBody");
+const emptyState = document.getElementById("emptyState");
+
+const openFilterBtn = document.getElementById("openFilterBtn");
+const clearFilterBtn = document.getElementById("clearFilterBtn");
+const filterPanel = document.getElementById("filterPanel");
+const fromDate = document.getElementById("fromDate");
+const toDate = document.getElementById("toDate");
+const applyFilterBtn = document.getElementById("applyFilterBtn");
+const cancelFilterBtn = document.getElementById("cancelFilterBtn");
+const filterStatus = document.getElementById("filterStatus");
+
+let allRows = [];
+let profileName = "";
+let profileArea = "";
+
+function minutesToHHMM(totalMinutes){
+  const mins = Math.max(0, parseInt(totalMinutes || "0", 10));
+  const hh = String(Math.floor(mins / 60)).padStart(2, "0");
+  const mm = String(mins % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function formatToMMDDYYYY(iso){
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return iso;
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function hoursBetween(dateISO, timeIn, timeOut){
+  const start = new Date(`${dateISO}T${timeIn}:00`);
+  const end = new Date(`${dateISO}T${timeOut}:00`);
+  const ms = end - start;
+  if (Number.isNaN(ms) || ms <= 0) return 0;
+  return ms / (1000 * 60 * 60);
+}
+
+function safeText(v){
+  return String(v ?? "");
+}
+
+function renderRows(rows){
+  if (rows.length === 0){
+    tbody.innerHTML = "";
+    emptyState.style.display = "block";
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const total = (r.timeIn && r.timeOut) ? hoursBetween(r.date, r.timeIn, r.timeOut) : 0;
+
+    return `
+      <tr>
+        <td>${formatToMMDDYYYY(r.date)}</td>
+        <td>${safeText(profileName)}</td>
+        <td>${safeText(r.area || profileArea)}</td>
+        <td>${safeText(r.timeIn || "")}</td>
+        <td>${safeText(r.timeOut || "")}</td>
+        <td>${total.toFixed(2)}</td>
+        <td>${minutesToHHMM(r.earlyOTMinutes || 0)}</td>
+        <td>${minutesToHHMM(r.otMinutes || 0)}</td>
+        <td>${minutesToHHMM(r.restDayOTMinutes || 0)}</td>
+        <td>${minutesToHHMM(r.regHolidayMinutes || 0)}</td>
+        <td>${minutesToHHMM(r.specHolidayMinutes || 0)}</td>
+        <td>${minutesToHHMM(r.tardinessMinutes || 0)}</td>
+        <td>${minutesToHHMM(r.undertimeMinutes || 0)}</td>
+      </tr>
+    `;
+  }).join("");
+
+  emptyState.style.display = "none";
+}
+
+function applyDateFilter(){
+  const start = fromDate.value;
+  const end = toDate.value;
+
+  if (!start || !end){
+    alert("Please select From Date and To Date.");
+    return;
+  }
+
+  if (start > end){
+    alert("Invalid date range. From Date must not be later than To Date.");
+    return;
+  }
+
+  const filteredRows = allRows.filter(r => r.date >= start && r.date <= end);
+
+  renderRows(filteredRows);
+  filterStatus.textContent = `Showing ${formatToMMDDYYYY(start)} to ${formatToMMDDYYYY(end)}.`;
+  filterPanel.classList.remove("active");
+}
+
+openFilterBtn.addEventListener("click", () => {
+  filterPanel.classList.toggle("active");
+});
+
+cancelFilterBtn.addEventListener("click", () => {
+  filterPanel.classList.remove("active");
+});
+
+applyFilterBtn.addEventListener("click", applyDateFilter);
+
+clearFilterBtn.addEventListener("click", () => {
+  fromDate.value = "";
+  toDate.value = "";
+  filterStatus.textContent = "No filter applied.";
+  renderRows(allRows);
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  const recordsSnap = await get(ref(database, `timeRecords/${user.uid}`));
+  const records = recordsSnap.exists() ? (recordsSnap.val() || {}) : {};
+
+  const userSnap = await get(ref(database, `users/${user.uid}`));
+  const profile = userSnap.exists() ? (userSnap.val() || {}) : {};
+
+  profileName = profile.name || profile.fullName || profile.fullname || profile.username || user.email || "";
+  profileArea = profile.area || "";
+
+  allRows = Object.entries(records)
+    .map(([date, record]) => ({ date, ...(record || {}) }))
+    .sort((a,b) => b.date.localeCompare(a.date));
+
+  renderRows(allRows);
+});
+</script>
+
+</body>
+</html>
