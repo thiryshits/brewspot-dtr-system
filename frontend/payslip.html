@@ -81,6 +81,40 @@ body{
   margin-top:8px;
   font-size:14px;
 }
+/* Payslip styles (match admin preview) */
+.payslip-preview{ background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.12); margin-bottom:24px; border:1.5px solid #eee; overflow:hidden; font-size:11px; color:#000; box-sizing:border-box; }
+.payslip-header{ text-align:center; margin-bottom:8px; border-bottom:2px solid #000; padding-bottom:6px; }
+.payslip-header h3{ margin:0; font-size:14px; font-weight:bold; }
+.payslip-info{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; font-size:10px; }
+.payslip-section{ margin-top:6px; }
+.payslip-section-title{ background:#e8e8e8; padding:4px; font-weight:bold; margin-bottom:4px; border-radius:2px; font-size:9px; }
+.payslip-table {
+  width: calc(100% - 8px);
+  margin: 0 4px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 8px;
+  margin-bottom: 4px;
+  line-height: 1.1;
+  color: #000;
+  border: 1px solid #bbb;
+  box-sizing: border-box;
+}
+.payslip-table th, .payslip-table td{ border:0.5px solid #bbb; padding:6px; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; box-sizing:border-box; }
+.payslip-table th:nth-child(1), .payslip-table td:nth-child(1){ width: 55%; }
+.payslip-table th:nth-child(2), .payslip-table td:nth-child(2){ width: 30%; text-align:center; }
+.payslip-table th:nth-child(3), .payslip-table td:nth-child(3){ width: 15%; }
+.payslip-table td.amount { text-align: left; color: #000; }
+.payslip-gross-line, .payslip-deduction-total{ text-align:right; font-weight:bold; }
+.payslip-net {
+  display: block;
+  margin-top: 10px;
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #003366;
+}
+</style>
 </style>
 </head>
 
@@ -109,15 +143,28 @@ body{
     No payslip record yet.
   </div>
 
-  <div class="small-note">
-    (This will show once your admin/system saves payslip is availabe.)
+  <div id="payslipSummary" style="display:none; margin-top:12px; background:rgba(255,255,255,0.9); padding:12px; border-radius:8px;">
+    <h3>Payslip</h3>
+    <div id="psSummaryContent">Loading...</div>
   </div>
+
+
+
+  <div style="margin-top:8px; display:flex; gap:8px;">
+    <button id="downloadPdfBtn" style="display:none;" class="btn">Download PDF</button>
+  </div>
+
+  <div id="renderedPayslip" style="display:none; margin-top:12px;"></div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script type="module">
 import { auth, database } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
 import { ref, get } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+function moneyPHP(v){ const n = Number(v); if (!Number.isFinite(n)) return "₱0.00"; return `₱${n.toFixed(2)}`; }
 
 function setText(id, value){
   document.getElementById(id).textContent = value;
@@ -151,8 +198,43 @@ onAuthStateChanged(auth, async (user) => {
 
   const name = await loadUserName(user.uid);
   setText("psName", name || "Not set");
+  // Load payslip record saved by admin
+  try{
+    const snap = await get(ref(database, `payslips/${user.uid}`));
+    if (snap.exists()){
+      const p = snap.val() || {};
+      // if admin saved the generated HTML, render it exactly
+      if (p.payslipHtml){
+        document.getElementById("renderedPayslip").innerHTML = p.payslipHtml;
+        document.getElementById("renderedPayslip").style.display = "block";
+        document.getElementById("payslipSummary").style.display = "none";
+        document.getElementById("noPayslip").style.display = "none";
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        downloadPdfBtn.style.display = 'inline-block';
 
-  // Until you connect payslip records to Firebase:
+        downloadPdfBtn.onclick = async () => {
+          try{
+            const el = document.getElementById('renderedPayslip');
+            const clone = el.cloneNode(true);
+            await html2pdf().from(clone).set({ margin:10, filename: `payslip-${(p.cutoffStart || '').replace(/:/g,'') || 'payslip'}.pdf` }).save();
+          }catch(err){ console.error(err); alert('Failed to generate PDF: '+err.message); }
+        };
+
+        return;
+      }
+      const html = `
+        <p><b>Cutoff:</b> ${p.cutoffDate || "-"}</p>
+        <p><b>Gross Pay:</b> ${moneyPHP(p.grossPay)}</p>
+        <p><b>Net Pay:</b> ${moneyPHP(p.netPay)}</p>
+        <p><b>Days Worked:</b> ${p.daysWorked ?? "-"}</p>
+      `;
+      document.getElementById("psSummaryContent").innerHTML = html;
+      document.getElementById("payslipSummary").style.display = "block";
+      document.getElementById("noPayslip").style.display = "none";
+      return;
+    }
+  }catch(e){ console.warn("Failed to read payslip:", e); }
+
   document.getElementById("noPayslip").style.display = "block";
 });
 </script>

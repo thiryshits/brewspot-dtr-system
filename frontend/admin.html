@@ -80,6 +80,16 @@
   .title-row h2{ margin:0; }
   .muted{ opacity:0.85; font-size:14px; }
 
+  body.restday-mode .title-row,
+  body.restday-mode .tabs{
+    display:none;
+  }
+
+  body.calendar-mode .title-row,
+  body.calendar-mode .tabs{
+    display:none;
+  }
+
   .tabs{
     margin-top:14px;
     display:flex;
@@ -124,7 +134,7 @@
 
   .row{
     display:flex;
-    gap:10px;
+    gap: 10px;
     flex-wrap:wrap;
     align-items:end;
   }
@@ -165,6 +175,15 @@
   .btn.ghost{ background:rgba(0,0,0,0.10); }
   .btn.ghost:hover{ background:rgba(0,0,0,0.15); }
 
+  .restday-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .restday-header h3{ margin:0; }
+
   .help{ font-size:13px; opacity:0.85; margin-top:8px; }
   .small{ font-size:12px; opacity:0.85; }
 
@@ -184,12 +203,58 @@
   }
   .kpi .label{ font-weight:bold; }
   .kpi .value{ font-size:28px; font-weight:bold; margin-top:6px; }
+  .employee-summaries-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap:12px;
+    margin-top:14px;
+  }
+  .employee-mini-card{
+    background:#fff;
+    border:1px solid rgba(0,0,0,0.06);
+    border-radius:10px;
+    padding:10px;
+    min-height:78px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:8px;
+  }
+  .employee-mini-row{ display:flex; gap:8px; align-items:center; justify-content:space-between; }
+  .mini-box{ flex:1; background:transparent; border-radius:8px; padding:6px 8px; text-align:center; }
+  .mini-label{ font-size:11px; color:#666; text-transform:uppercase; letter-spacing:0.04em; }
+  .mini-value{ font-size:14px; font-weight:800; }
+  @media (max-width:900px){ .employee-summaries-grid{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width:640px){ .employee-summaries-grid{ grid-template-columns: 1fr; } }
+  /* Employee tabs (vertical list of employee names + single-row metrics) */
+  .employee-tabs{ display:flex; gap:12px; margin-top:14px; align-items:flex-start; }
+  .employee-tab-list{ width:220px; max-height:420px; overflow:auto; border-radius:8px; background:rgba(255,255,255,0.95); padding:6px; border:1px solid rgba(0,0,0,0.06); }
+  .employee-tab{ display:block; width:100%; text-align:left; padding:8px 10px; margin-bottom:6px; cursor:pointer; border-radius:6px; background:transparent; border:none; }
+  .employee-tab.active{ background:#007bff; color:#fff; font-weight:700; }
+  .employee-tab:hover{ background:rgba(0,0,0,0.04); }
+  .employee-tab-content{ flex:1; min-height:78px; background:#fff; border:1px solid rgba(0,0,0,0.06); border-radius:8px; padding:10px; }
+  .metric-row{ display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; align-items:center; }
+  .metric-cell{ background:transparent; padding:8px; border-radius:6px; text-align:center; }
+  .metric-label{ font-size:11px; color:#666; text-transform:uppercase; }
+  .metric-value{ font-size:16px; font-weight:800; }
+  @media (max-width:900px){ .employee-tabs{ flex-direction:column; } .employee-tab-list{ width:100%; max-height:180px; display:flex; gap:6px; overflow-x:auto; overflow-y:hidden; } .employee-tab{ white-space:nowrap; flex:0 0 auto; } .metric-row{ grid-template-columns: repeat(3, 1fr); } }
+
+  /* New: stacked employee list (rows) for overview to avoid horizontal layout */
+  .employee-list-rows{ display:flex; flex-direction:column; gap:12px; }
+  .employee-block{ width:100%; box-sizing:border-box; }
+  .restday-list{ display:flex; flex-wrap:wrap; gap:6px; }
+  .restday-chip{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; border:1px solid rgba(0,0,0,0.12); background:rgba(255,255,255,0.7); white-space:nowrap; }
+  /* Ensure label and value rows keep columns but wrap nicely on small screens */
+  .employee-block .label-row .metric-label{ font-weight:700; }
+  /* Make the column labels larger, bold and dark for employee blocks (1.25x requested) */
+  .employee-block .metric-label{ font-size:17.5px; font-weight:800; color:#111; }
+  @media (max-width:600px){ .metric-row{ grid-template-columns: repeat(2, 1fr); } }
 
   .table-wrap{ width:100%; overflow-x:auto; margin-top:10px; }
   table{
     width:100%;
     border-collapse:collapse;
-    min-width: 900px;
+    min-width: 100px;
     background:rgba(255,255,255,0.55);
     border-radius:10px;
     overflow:hidden;
@@ -208,12 +273,197 @@
   .pill.approved{ background:rgba(76, 175, 80, 0.35); }
   .pill.rejected{ background:rgba(244, 67, 54, 0.35); }
 
-  .staff-controls{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    align-items:end;
+  /* ===========================
+     PAYSLIP LAYOUT (FIXED)
+     =========================== */
+  .payslips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+    padding: 10px 0;
   }
+  @media (max-width: 1200px) {
+    .payslips-grid { grid-template-columns: 1fr; }
+  }
+  @media print {
+    .payslips-grid { display: block; padding:0; }
+  }
+
+  .payslip-preview {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+    margin-bottom: 24px;
+    border: 1.5px solid #eee;
+
+    page-break-inside: avoid;
+    break-inside: avoid;
+
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: 11px;
+    color: #000;
+    box-sizing: border-box;
+  }
+  @media print {
+    .payslip-preview {
+      page-break-after: always;
+      break-after: page;
+      margin-bottom: 0;
+      box-shadow: none;
+      border: none;
+      padding: 10px;
+    }
+  }
+
+  .payslip-header {
+    text-align: center;
+    margin-bottom: 8px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6px;
+  }
+  .payslip-header h3 { margin: 0; font-size: 14px; font-weight: bold; color: #000; }
+  .payslip-header p { margin: 2px 0; font-size: 10px; color: #000; }
+
+  .payslip-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .payslip-info p { margin: 1px 0; color: #000; }
+  .payslip-info b { font-weight: bold; color: #000; }
+
+  .payslip-section { margin-top: 6px; flex: 1; box-sizing: border-box; }
+
+  .payslip-section-title {
+    background: #e8e8e8;
+    padding: 4px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    border-radius: 2px;
+    font-size: 9px;
+    color: #000;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+.payslip-table {
+    width: calc(100% - 8px);
+    margin: 0 4px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: 8px;
+    margin-bottom: 4px;
+    line-height: 1.1;
+    color: #000;
+    border: 1px solid #bbb;
+    box-sizing: border-box;
+}
+  .payslip-table th,
+  .payslip-table td {
+    border: 0.5px solid #bbb;
+    padding: 4px 3px;
+    text-align: left;
+    height: auto;
+    color: #000;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
+  .payslip-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+    color: #000;
+  }
+
+  .payslip-table th:nth-child(1),
+  .payslip-table td:nth-child(1){ width: 55%; }
+  .payslip-table th:nth-child(2),
+  .payslip-table td:nth-child(2){ width: 30%; text-align:center; }
+  .payslip-table th:nth-child(3),
+  .payslip-table td:nth-child(3){ width: 15%; }
+
+  /* CHANGED: amount column MUST be left-aligned */
+  .payslip-table td.amount { text-align: left; color: #000; }
+
+  .payslip-gross-line {
+    text-align: right;
+    margin-top: 4px;
+    font-weight: bold;
+    font-size: 9px;
+    padding-top: 3px;
+    border-top: 1px solid #bbb;
+    color: #000;
+  }
+
+  .payslip-deduction-total {
+    text-align: right;
+    margin-top: 4px;
+    font-weight: bold;
+    font-size: 9px;
+    padding-top: 3px;
+    border-top: 1px solid #bbb;
+    color: #000;
+  }
+
+  .payslip-net {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 2px solid #000;
+    font-weight: bold;
+    font-size: 11px;
+    text-align: right;
+    color: #0f6c2f;
+  }
+
+  .loading { text-align: center; padding: 20px; color: #666; }
+
+  .success-msg {
+    background: #c8e6c9;
+    color: #1b5e20;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+  }
+  .error-msg {
+    background: #ffcdd2;
+    color: #b71c1c;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+  }
+
+  @media print {
+    /* Optional: hide navbar/header in print if you want */
+    /* .navbar, .header, .tabs, .title-row { display:none !important; } */
+  }
+
+  /* Camera button (copied from profile) */
+  .camera-btn{
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    border:2px solid rgba(206,206,109,0.993);
+    background:#000;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    padding:0;
+  }
+  .camera-btn:hover{ background:#0056b3; }
+  .camera-btn svg{ width:20px; height:20px; }
+  .camera-btn.inline{ position:static; margin-left:8px; align-self:flex-end; }
+  .hidden-file{ display:none; }
 </style>
 </head>
 
@@ -224,6 +474,8 @@
     <div class="nav-left">
       <a href="admin.html">Admin Dashboard</a>
       <a href="admin-staff-dashboard.html">Staff Dashboard</a>
+      <a href="#tab-restdays" data-tab-link="tab-restdays">Restday Dashboard</a>
+      <a href="#tab-calendar" data-tab-link="tab-calendar">Calendar Dashboard</a>
     </div>
     <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
   </div>
@@ -242,6 +494,7 @@
       <button class="tab" data-tab="tab-employees" type="button">Employees</button>
       <button class="tab" data-tab="tab-rates" type="button">Rates</button>
       <button class="tab" data-tab="tab-multipliers" type="button">Payslip Multipliers</button>
+      <button class="tab" data-tab="tab-payslip" type="button">Generate Payslip</button>
     </div>
 
     <div class="tab-panel active" id="tab-overview">
@@ -260,10 +513,9 @@
         </div>
       </div>
 
-      <div class="help" style="margin-top:10px;">
-      </div>
-
-      <div class="help">
+      <div id="employeeSummaries" class="employee-tabs">
+        <div id="empTabList" class="employee-tab-list">Loading employees...</div>
+        <div id="empTabContent" class="employee-tab-content">Select an employee to view summary</div>
       </div>
     </div>
 
@@ -342,9 +594,6 @@
             </tbody>
           </table>
         </div>
-
-        <div class="help small">
-        </div>
       </div>
     </div>
 
@@ -370,8 +619,64 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
 
-        <div class="help small">
+    <div class="tab-panel" id="tab-restdays">
+      <div class="card">
+        <div class="restday-header">
+          <h3>Restday Dashboard</h3>
+          <button class="btn primary" id="saveRestdaysBtn" type="button">Save Restdays</button>
+        </div>
+        <div class="help small" style="margin-bottom:10px;">Select one or more rest days for each employee, then click Save Restdays.</div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>UID</th>
+                <th>Rest Days</th>
+              </tr>
+            </thead>
+            <tbody id="restdaysBody">
+              <tr><td colspan="4">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-calendar">
+      <div class="card">
+        <h3>Calendar Dashboard</h3>
+        <div class="help small">Manage holiday dates used in payslip calculations.</div>
+
+        <div style="display:flex; gap:12px; margin-top:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px;">
+            <h4>Special Holidays</h4>
+            <div class="row" style="align-items:center; gap:8px;">
+              <input id="calAddSpecialName" type="text" placeholder="Holiday name">
+              <input id="calAddSpecialDate" type="date">
+              <button class="btn" id="calAddSpecialBtn" type="button">Add</button>
+            </div>
+            <div id="calSpecialList" style="margin-top:8px;"></div>
+          </div>
+
+          <div style="flex:1; min-width:220px;">
+            <h4>Regular Holidays</h4>
+            <div class="row" style="align-items:center; gap:8px;">
+              <input id="calAddRegularName" type="text" placeholder="Holiday name">
+              <input id="calAddRegularDate" type="date">
+              <button class="btn" id="calAddRegularBtn" type="button">Add</button>
+            </div>
+            <div id="calRegularList" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; text-align:right;">
+          <button class="btn primary" id="saveHolidaysBtn" type="button">Save Holidays</button>
         </div>
       </div>
     </div>
@@ -414,6 +719,20 @@
               <div class="field">
                 <label>Overtime</label>
                 <input id="mOvertime" type="number" step="0.01" placeholder="1.25">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 style="margin-top:0;">OT Eligibility</h3>
+            <div class="row">
+              <div class="field">
+                <label>Early OT threshold (minutes)</label>
+                <input id="mEarlyOTThreshold" type="number" step="1" placeholder="45">
+              </div>
+              <div class="field">
+                <label>Overtime threshold (minutes after shift)</label>
+                <input id="mOTThreshold" type="number" step="1" placeholder="45">
               </div>
             </div>
           </div>
@@ -462,8 +781,46 @@
       </div>
     </div>
 
+    <!-- GENERATE PAYSLIP TAB -->
+    <div class="tab-panel" id="tab-payslip">
+      <div class="card">
+        <h3>Generate Payslips</h3>
+
+        <div id="payslipMessage"></div>
+
+        <div class="row" style="margin-bottom: 15px;">
+          <div class="field">
+            <label for="psFromDate">From Date</label>
+            <input id="psFromDate" type="date">
+          </div>
+          <div class="field">
+            <label for="psToDate">To Date</label>
+            <input id="psToDate" type="date">
+          </div>
+          <button class="btn primary" id="loadPayslipsBtn" type="button">Load Employees</button>
+          <button class="camera-btn inline" id="payslipCameraBtn" type="button" aria-label="Upload image for payslip">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 7L10.5 5H13.5L15 7H18C19.1 7 20 7.9 20 9V17C20 18.1 19.1 19 18 19H6C4.9 19 4 18.1 4 17V9C4 7.9 4.9 7 6 7H9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M12 16C13.657 16 15 14.657 15 13C15 11.343 13.657 10 12 10C10.343 10 9 11.343 9 13C9 14.657 10.343 16 12 16Z" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </button>
+          <input id="payslipImageInput" class="hidden-file" type="file" accept="image/*">
+        </div>
+
+        <div id="payslipContainer" class="loading">Select a date range and click "Load Employees"</div>
+      </div>
+
+      <div class="card" style="margin-top: 15px;">
+        <div class="row">
+          <button class="btn ok" id="uploadAllPayslipsBtn" type="button" disabled>📤 Upload All Payslips</button>
+          <div class="help" style="flex: 1;">Uploads all generated payslips to employee accounts.</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script type="module">
 import { auth, database } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
@@ -478,6 +835,28 @@ function mmddyyyyFromISO(iso){
   return `${mm}/${dd}/${yyyy}`;
 }
 
+function isoToMMDDYYYY(iso){
+  if (!iso) return "";
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "";
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${mm}/${dd}/${yyyy}`;
+}
+
+function mmddyyyyToISO(mmdd){
+  if (!mmdd) return "";
+  const parts = String(mmdd).trim().split(/[\/\-]/);
+  if (parts.length !== 3) return "";
+  let [mm, dd, yyyy] = parts;
+  mm = String(mm).padStart(2, '0');
+  dd = String(dd).padStart(2, '0');
+  if (!/^\d{4}$/.test(yyyy)) return "";
+  if (!/^\d{2}$/.test(mm) || !/^\d{2}$/.test(dd)) return "";
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function safeText(v){
   return String(v ?? "");
 }
@@ -488,14 +867,99 @@ function statusPill(status){
   return `<span class="pill ${cls}">${cls.toUpperCase()}</span>`;
 }
 
+/* NEW: safe money formatting (always show computed value; else 0.00) */
+function moneyPHP(v){
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "₱0.00";
+  return `₱${n.toFixed(2)}`;
+}
+
+/* NEW: build Date objects that handle 24:00 and crossing midnight safely */
+function dateTimeFromHHMM(dateKey, hhmm){
+  if (!hhmm) return null;
+
+  const [hStr, mStr] = String(hhmm).split(":");
+  const h = Number(hStr);
+  const m = Number(mStr);
+
+  if (!Number.isInteger(h) || !Number.isInteger(m)) return null;
+
+  // Handle 24:00 as next day 00:00
+  if (h === 24 && m === 0){
+    const base = new Date(dateKey + "T00:00:00");
+    base.setDate(base.getDate() + 1);
+    return base;
+  }
+
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return new Date(`${dateKey}T${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:00`);
+}
+
+// Bucket OT into whole hours based on threshold minutes
+function bucketOtHours(rawMinutes, thresholdMinutes){
+  const raw = Number(rawMinutes || 0);
+  const threshold = Number(thresholdMinutes || 45);
+  if (raw < threshold) return 0;
+  return Math.floor((raw - threshold) / 60) + 1;
+}
+
+function minutesToHHMM(totalMinutes){
+  const mins = Math.max(0, Math.round(totalMinutes || 0));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function hhmmToDecimalHours(value){
+  if (!value) return 0;
+  const parts = String(value).split(":");
+  const h = Number(parts[0] || 0);
+  const m = Number(parts[1] || 0);
+  return (Number.isFinite(h) ? h : 0) + ((Number.isFinite(m) ? m : 0) / 60);
+}
+
+function weekdayCodeFromDate(dateKey){
+  const d = new Date(dateKey + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "";
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()] || "";
+}
+
+function isRestDayForEmployee(employee, dateKey){
+  const selected = getSelectedRestDays(employee?.restDays || employee?.restDay);
+  if (!selected.length) return false;
+  const weekday = weekdayCodeFromDate(dateKey);
+  return selected.includes(weekday);
+}
+
+function activateTab(tabId){
+  if (!tabId) return;
+  document.body.classList.toggle("restday-mode", tabId === "tab-restdays");
+  document.body.classList.toggle("calendar-mode", tabId === "tab-calendar");
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tabId));
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.toggle("active", p.id === tabId));
+  if (tabId === "tab-calendar") loadCalendarDashboard();
+}
+
 document.querySelectorAll(".tab").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById(btn.dataset.tab).classList.add("active");
+    activateTab(btn.dataset.tab);
   });
 });
+
+document.querySelectorAll("[data-tab-link]").forEach(link => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    activateTab(link.getAttribute("data-tab-link"));
+    history.replaceState(null, "", `#${link.getAttribute("data-tab-link")}`);
+  });
+});
+
+if (location.hash){
+  const hashTab = location.hash.replace(/^#/, "");
+  if (document.getElementById(hashTab)){
+    activateTab(hashTab);
+  }
+}
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   try { await signOut(auth); } catch(e){ console.warn(e); }
@@ -514,16 +978,63 @@ const kpiStaff = document.getElementById("kpiStaff");
 const requestsBody = document.getElementById("requestsBody");
 const schedulesBody = document.getElementById("schedulesBody");
 const employeesBody = document.getElementById("employeesBody");
+const restdaysBody = document.getElementById("restdaysBody");
+const saveRestdaysBtn = document.getElementById("saveRestdaysBtn");
 const ratesBody = document.getElementById("ratesBody");
 
 const mEarlyOT = document.getElementById("mEarlyOT");
 const mOvertime = document.getElementById("mOvertime");
+const mEarlyOTThreshold = document.getElementById("mEarlyOTThreshold");
+const mOTThreshold = document.getElementById("mOTThreshold");
 const mSpecHol = document.getElementById("mSpecHol");
 const mSpecHolOT = document.getElementById("mSpecHolOT");
 const mRegHol = document.getElementById("mRegHol");
 const mRegHolOT = document.getElementById("mRegHolOT");
 const mRestdayOT = document.getElementById("mRestdayOT");
 const mRestdayOTOT = document.getElementById("mRestdayOTOT");
+
+// Payslip elements
+const psFromDate = document.getElementById("psFromDate");
+const psToDate = document.getElementById("psToDate");
+const loadPayslipsBtn = document.getElementById("loadPayslipsBtn");
+const payslipContainer = document.getElementById("payslipContainer");
+const uploadAllPayslipsBtn = document.getElementById("uploadAllPayslipsBtn");
+const payslipMessage = document.getElementById("payslipMessage");
+
+const summaryCutoffRange = document.getElementById("summaryCutoffRange");
+const summaryPaidTime = document.getElementById("summaryPaidTime");
+const summaryEarlyOT = document.getElementById("summaryEarlyOT");
+const summaryOT = document.getElementById("summaryOT");
+const summaryTardiness = document.getElementById("summaryTardiness");
+const summaryUndertime = document.getElementById("summaryUndertime");
+
+const payslipCameraBtn = document.getElementById("payslipCameraBtn");
+const payslipImageInput = document.getElementById("payslipImageInput");
+
+if (payslipCameraBtn){
+  payslipCameraBtn.addEventListener("click", () => { if (payslipImageInput) payslipImageInput.click(); });
+}
+
+if (payslipImageInput){
+  payslipImageInput.addEventListener("change", async () => {
+    const file = payslipImageInput.files && payslipImageInput.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")){
+      alert("Please choose an image file.");
+      payslipImageInput.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024){
+      alert("Image is too large. Please choose an image under 5MB.");
+      payslipImageInput.value = "";
+      return;
+    }
+
+    alert("Image selected for payslip (not yet applied).");
+  });
+}
+
+let payslipsData = {};
 
 onAuthStateChanged(auth, async (user) => {
   if (!user){
@@ -564,6 +1075,11 @@ async function ensureSeed(){
   if (!cutoff.exists()){
     await set(ref(database, "settings/cutoff"), { start:"2026-05-26", end:"2026-06-10" });
   }
+
+  const otEligibility = await get(ref(database, "settings/otEligibility"));
+  if (!otEligibility.exists()){
+    await set(ref(database, "settings/otEligibility"), { earlyBeforeMinutes: 45, afterMinutes: 45 });
+  }
 }
 
 async function refreshAll(){
@@ -571,6 +1087,8 @@ async function refreshAll(){
   await loadRequests();
   await loadSchedules();
   await loadEmployeesAndRates();
+  await loadRestdayDashboard();
+  await loadCalendarDashboard();
   await loadMultipliers();
   await refreshOverviewKPIs();
 }
@@ -591,6 +1109,96 @@ async function refreshOverviewKPIs(){
   const users = usersSnap.exists() ? (usersSnap.val() || {}) : {};
   const staffCount = Object.values(users).filter(u => (u?.role || "staff") !== "admin").length;
   kpiStaff.textContent = String(staffCount);
+
+  await refreshCutoffSummary();
+}
+
+async function refreshCutoffSummary(){
+  const container = document.getElementById('employeeSummaries');
+  const tabListEl = document.getElementById('empTabList');
+  const tabContentEl = document.getElementById('empTabContent');
+  if (!container || !tabListEl || !tabContentEl) return;
+  // We'll render stacked employee cards inside the `employeeSummaries` container
+  container.innerHTML = 'Loading employees...';
+
+  try{
+    const cutoffSnap = await get(ref(database, 'settings/cutoff'));
+    const cutoff = cutoffSnap.exists() ? (cutoffSnap.val() || {}) : {};
+    const start = cutoff.start || '';
+    const end = cutoff.end || '';
+
+    if (!start || !end){
+      container.innerHTML = '<div class="small">No cutoff range set</div>';
+      return;
+    }
+
+    const usersSnap = await get(ref(database, 'users'));
+    const users = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+    const staff = Object.entries(users).filter(([,u]) => ((u.role || 'staff').toLowerCase() !== 'admin')).map(([uid,u]) => ({ uid, ...u }));
+
+    if (!staff.length){ container.innerHTML = '<div class="small">No staff users</div>'; return; }
+
+    const multiplierSnap = await get(ref(database, 'settings/multipliers'));
+    const multipliers = multiplierSnap.exists() ? (multiplierSnap.val() || {}) : {};
+    const areaSchedulesSnap = await get(ref(database, 'settings/areaSchedules'));
+    const areaSchedules = areaSchedulesSnap.exists() ? (areaSchedulesSnap.val() || {}) : {};
+    const otEligibilitySnap = await get(ref(database, 'settings/otEligibility'));
+    const otEligibility = otEligibilitySnap.exists() ? (otEligibilitySnap.val() || { earlyBeforeMinutes:45, afterMinutes:45 }) : { earlyBeforeMinutes:45, afterMinutes:45 };
+
+    function extractNum(str){ if (!str) return 0; const m = String(str).match(/[\d.]+/); return m ? parseFloat(m[0]) : 0; }
+
+    // compute per-employee summaries; only include staff who have records in the cutoff
+    const summaries = [];
+    for (const employee of staff){
+      const p = await calculatePayslip(employee, start, end, multipliers, areaSchedules, otEligibility);
+      // skip employees with no worked days in this cutoff
+      if (!p || !p.daysWorked || Number(p.daysWorked) === 0) continue;
+
+      summaries.push({
+        uid: employee.uid,
+        label: safeText(employee.name || employee.fullName || employee.email || employee.uid),
+        paidTime: safeText(p.compensation?.basicTime || p.totalWorkingTime || '0 Hr/s'),
+        earlyOT: safeText(p.compensation?.earlyOTTime || '0 Hr/s'),
+        otTime: safeText(p.compensation?.otTime || '0 Hr/s'),
+        tardiness: safeText(p.deductions?.tardinessTime || '00:00'),
+        undertime: safeText(p.deductions?.undertimeTime || '00:00')
+      });
+    }
+
+    if (summaries.length === 0){
+      container.classList.remove('employee-list-rows');
+      container.innerHTML = '<div class="small">No staff records for the selected cutoff range.</div>';
+      return;
+    }
+
+    // Render stacked employee cards (labels row + values row) to avoid left-side scrolling
+    const cardsHtml = summaries.map((s) => `
+      <div class="card employee-block">
+        <div style="font-weight:700;margin-bottom:8px">${s.label}</div>
+        <div class="metric-row label-row">
+          <div class="metric-cell"><div class="metric-label">PAIDTIME</div></div>
+          <div class="metric-cell"><div class="metric-label">EARLY OT</div></div>
+          <div class="metric-cell"><div class="metric-label">OT</div></div>
+          <div class="metric-cell"><div class="metric-label">TARDINESS</div></div>
+          <div class="metric-cell"><div class="metric-label">UNDER TIME</div></div>
+        </div>
+        <div class="metric-row value-row" style="margin-top:6px;">
+          <div class="metric-cell"><div class="metric-value">${s.paidTime}</div></div>
+          <div class="metric-cell"><div class="metric-value">${s.earlyOT}</div></div>
+          <div class="metric-cell"><div class="metric-value">${s.otTime}</div></div>
+          <div class="metric-cell"><div class="metric-value">${s.tardiness}</div></div>
+          <div class="metric-cell"><div class="metric-value">${s.undertime}</div></div>
+        </div>
+      </div>
+    `).join('');
+
+    // Apply stacked-row layout class so employee cards render one-per-row
+    container.classList.add('employee-list-rows');
+    container.innerHTML = cardsHtml;
+  }catch(err){
+    console.warn('Failed to render employee summaries', err);
+    container.innerHTML = '<div class="error-msg">Failed to load summaries</div>';
+  }
 }
 
 async function loadCutoff(){
@@ -598,6 +1206,8 @@ async function loadCutoff(){
   const data = snap.exists() ? (snap.val() || {}) : {};
   cutoffStart.value = data.start || "";
   cutoffEnd.value = data.end || "";
+  psFromDate.value = data.start || "";
+  psToDate.value = data.end || "";
   const display = `${mmddyyyyFromISO(data.start || "")} - ${mmddyyyyFromISO(data.end || "")}`;
   cutoffDisplay.textContent = display;
   cutoffKPI.textContent = display;
@@ -874,6 +1484,86 @@ async function loadEmployeesAndRates(){
   });
 }
 
+function getSelectedRestDays(value){
+  if (Array.isArray(value)) return value.filter(Boolean).map(String);
+  if (typeof value === "string") return value.split(",").map(v => v.trim()).filter(Boolean);
+  if (value && typeof value === "object") return Object.keys(value).filter(key => value[key]);
+  return [];
+}
+
+function renderRestdayChips(uid, selectedDays){
+  const days = [
+    ["Mon", "Mon"],
+    ["Tue", "Tue"],
+    ["Wed", "Wed"],
+    ["Thu", "Thu"],
+    ["Fri", "Fri"],
+    ["Sat", "Sat"],
+    ["Sun", "Sun"]
+  ];
+
+  return `<div class="restday-list">${days.map(([value, label]) => {
+    const checked = selectedDays.includes(value) ? "checked" : "";
+    return `<label class="restday-chip"><input type="checkbox" data-restday-day="${safeText(uid)}" value="${value}" ${checked}> <span>${label}</span></label>`;
+  }).join("")}</div>`;
+}
+
+async function loadRestdayDashboard(){
+  if (!restdaysBody) return;
+
+  const usersSnap = await get(ref(database, "users"));
+  const users = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+  const rows = Object.entries(users)
+    .map(([uid, u]) => ({ uid, ...u }))
+    .filter(u => (u.role || "staff").toLowerCase() !== "admin")
+    .sort((a, b) => safeText(a.name || a.email).localeCompare(safeText(b.name || b.email)));
+
+  if (!rows.length){
+    restdaysBody.innerHTML = `<tr><td colspan="4">No staff users found.</td></tr>`;
+    return;
+  }
+
+  restdaysBody.innerHTML = rows.map(u => {
+    const name = u.name || u.fullName || u.fullname || u.username || "";
+    const email = u.email || "";
+    const selectedDays = getSelectedRestDays(u.restDays || u.restDay);
+
+    return `
+      <tr>
+        <td>${safeText(name)}</td>
+        <td>${safeText(email)}</td>
+        <td class="small">${safeText(u.uid)}</td>
+        <td>${renderRestdayChips(u.uid, selectedDays)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+if (saveRestdaysBtn){
+  saveRestdaysBtn.addEventListener("click", async () => {
+    if (!restdaysBody) return;
+
+    const rows = Array.from(restdaysBody.querySelectorAll("tr"));
+    const updates = {};
+
+    for (const row of rows){
+      const uidCell = row.querySelector("td:nth-child(3)");
+      if (!uidCell) continue;
+
+      const uid = uidCell.textContent.trim();
+      if (!uid || uid === "Loading...") continue;
+
+      const selectedDays = Array.from(row.querySelectorAll(`input[data-restday-day="${CSS.escape(uid)}"]:checked`)).map(el => el.value);
+      updates[`users/${uid}/restDays`] = selectedDays;
+      updates[`users/${uid}/restDay`] = selectedDays[0] || null;
+    }
+
+    await update(ref(database), updates);
+    alert("Restdays saved!");
+    await loadRestdayDashboard();
+  });
+}
+
 async function loadMultipliers(){
   const snap = await get(ref(database, "settings/multipliers"));
   const m = snap.exists() ? (snap.val() || {}) : {};
@@ -886,7 +1576,118 @@ async function loadMultipliers(){
   mRegHolOT.value = m.regularHolidayOT ?? "";
   mRestdayOT.value = m.restdayOT ?? "";
   mRestdayOTOT.value = m.restdayOTOT ?? "";
+
+  const eligibilitySnap = await get(ref(database, "settings/otEligibility"));
+  const eligibility = eligibilitySnap.exists() ? (eligibilitySnap.val() || {}) : {};
+
+  mEarlyOTThreshold.value = eligibility.earlyBeforeMinutes ?? "";
+  mOTThreshold.value = eligibility.afterMinutes ?? "";
 }
+
+// Calendar Dashboard: load/save holiday dates
+function normalizeHolidayEntries(raw){
+  if (!raw) return [];
+  if (Array.isArray(raw)){
+    return raw
+      .map(item => {
+        if (typeof item === "string") return { date: item, name: "" };
+        if (item && typeof item === "object"){
+          const date = item.date || item.value || item.iso || "";
+          if (!date) return null;
+          return { date, name: item.name || item.label || "" };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .filter(item => item.date);
+  }
+
+  if (typeof raw === "object"){
+    return Object.entries(raw)
+      .map(([date, value]) => {
+        if (typeof value === "string") return { date, name: value };
+        if (value && typeof value === "object") return { date: value.date || date, name: value.name || value.label || "" };
+        return { date, name: "" };
+      })
+      .filter(item => item.date);
+  }
+
+  return [];
+}
+
+async function loadCalendarDashboard(){
+  const snap = await get(ref(database, "settings/holidayDates"));
+  const data = snap.exists() ? (snap.val() || {}) : {};
+  const special = normalizeHolidayEntries(data.special);
+  const regular = normalizeHolidayEntries(data.regular);
+
+  const specialList = document.getElementById("calSpecialList");
+  const regularList = document.getElementById("calRegularList");
+  if (specialList) specialList.innerHTML = renderHolidayItems(special, "special");
+  if (regularList) regularList.innerHTML = renderHolidayItems(regular, "regular");
+}
+
+function renderHolidayItems(list, type){
+  if (!list || !list.length) return `<div class="help small">No dates added.</div>`;
+  return list.map(item => `
+    <div class="holiday-row" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+      <div style="flex:1; min-width:140px;">
+        <div><b>${safeText(item.name || "Unnamed Holiday")}</b></div>
+        <div class="small">${mmddyyyyFromISO(item.date)} ${safeText(item.date)}</div>
+      </div>
+      <button class="btn" type="button" data-remove-holiday="1" data-type="${type}" data-date="${item.date}">Remove</button>
+    </div>
+  `).join("");
+}
+
+async function addHoliday(type){
+  const inputId = type === "special" ? "calAddSpecialDate" : "calAddRegularDate";
+  const nameId = type === "special" ? "calAddSpecialName" : "calAddRegularName";
+  const el = document.getElementById(inputId);
+  const nameEl = document.getElementById(nameId);
+  if (!el) return;
+  const val = el.value;
+  if (!val) return alert("Select a date first");
+  const name = (nameEl?.value || "").trim();
+
+  const snap = await get(ref(database, "settings/holidayDates"));
+  const data = snap.exists() ? (snap.val() || {}) : {};
+  const arr = normalizeHolidayEntries(data[type]);
+  if (!arr.some(item => item.date === val)) arr.push({ date: val, name });
+  data[type] = arr;
+  await set(ref(database, "settings/holidayDates"), data);
+  el.value = "";
+  if (nameEl) nameEl.value = "";
+  await loadCalendarDashboard();
+}
+
+async function removeHoliday(event){
+  event.preventDefault();
+  const btn = event.target.closest("[data-remove-holiday]") || event.currentTarget;
+  const type = btn.getAttribute("data-type");
+  const date = btn.getAttribute("data-date");
+  if (!type || !date) return;
+  const snap = await get(ref(database, "settings/holidayDates"));
+  const data = snap.exists() ? (snap.val() || {}) : {};
+  const arr = normalizeHolidayEntries(data[type]);
+  const idx = arr.findIndex(item => item.date === date);
+  if (idx !== -1) arr.splice(idx, 1);
+  data[type] = arr;
+  await set(ref(database, "settings/holidayDates"), data);
+  await loadCalendarDashboard();
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "calAddSpecialBtn") addHoliday("special");
+  if (e.target && e.target.id === "calAddRegularBtn") addHoliday("regular");
+  if (e.target && e.target.closest && e.target.closest("[data-remove-holiday]")) removeHoliday(e);
+});
+
+document.getElementById("saveHolidaysBtn")?.addEventListener("click", async () => {
+  // Save is effectively already applied by add/remove; reload to ensure UI sync
+  await loadCalendarDashboard();
+  alert("Holidays saved.");
+});
 
 document.getElementById("saveMultipliersBtn").addEventListener("click", async () => {
   function numOrNull(v){
@@ -911,8 +1712,514 @@ document.getElementById("saveMultipliersBtn").addEventListener("click", async ()
     updatedAt: Date.now()
   };
 
+  const eligibilityPayload = {
+    earlyBeforeMinutes: numOrNull(mEarlyOTThreshold.value),
+    afterMinutes: numOrNull(mOTThreshold.value),
+    updatedAt: Date.now()
+  };
+
   await update(ref(database, "settings/multipliers"), payload);
-  alert("Multipliers saved!");
+  await update(ref(database, "settings/otEligibility"), eligibilityPayload);
+  alert("Multipliers and OT eligibility saved!");
+});
+
+// ============ PAYSLIP FUNCTIONS ============
+
+loadPayslipsBtn.addEventListener("click", async () => {
+  const fromRaw = psFromDate.value.trim();
+  const toRaw = psToDate.value.trim();
+
+  if (!fromRaw || !toRaw){
+    alert("Please enter both From and To dates.");
+    return;
+  }
+
+  const fromISO = fromRaw;
+  const toISO = toRaw;
+
+  if (fromISO > toISO){
+    alert("Invalid range: From date must be before To date.");
+    return;
+  }
+
+  payslipContainer.innerHTML = '<div class="loading">Generating payslips...</div>';
+  payslipMessage.innerHTML = "";
+
+  try {
+    await generatePayslips(fromISO, toISO);
+    uploadAllPayslipsBtn.disabled = false;
+  } catch (e) {
+    console.error(e);
+    payslipMessage.innerHTML = `<div class="error-msg">Error generating payslips: ${e.message}</div>`;
+    uploadAllPayslipsBtn.disabled = true;
+  }
+});
+
+async function generatePayslips(startDate, endDate) {
+  const usersSnap = await get(ref(database, "users"));
+  const users = usersSnap.exists() ? (usersSnap.val() || {}) : {};
+
+  const multiplierSnap = await get(ref(database, "settings/multipliers"));
+  const multipliers = multiplierSnap.exists() ? (multiplierSnap.val() || {}) : {};
+  const areaSchedulesSnap = await get(ref(database, "settings/areaSchedules"));
+  const areaSchedules = areaSchedulesSnap.exists() ? (areaSchedulesSnap.val() || {}) : {};
+  const otEligibilitySnap = await get(ref(database, "settings/otEligibility"));
+  const otEligibility = otEligibilitySnap.exists() ? (otEligibilitySnap.val() || { earlyBeforeMinutes:45, afterMinutes:45 }) : { earlyBeforeMinutes:45, afterMinutes:45 };
+
+  const staff = Object.entries(users)
+    .map(([uid, u]) => ({ uid, ...u }))
+    .filter(u => (u.role || "staff").toLowerCase() !== "admin")
+    .sort((a, b) => safeText(a.name || a.email).localeCompare(safeText(b.name || b.email)));
+
+  if (staff.length === 0) {
+    payslipContainer.innerHTML = '<div class="loading">No staff members found.</div>';
+    return;
+  }
+
+  payslipsData = {};
+  const previews = [];
+
+  for (const employee of staff) {
+    const payslip = await calculatePayslip(employee, startDate, endDate, multipliers, areaSchedules, otEligibility);
+    const previewHTML = renderPayslipPreview(payslip);
+    // save both data and generated HTML so we can persist exact page per account
+    const inlinePayslipStyles = `
+      .payslip-preview{ background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 12px rgba(0,0,0,0.12); margin-bottom:24px; border:1.5px solid #eee; overflow:hidden; font-size:11px; color:#000; box-sizing:border-box; }
+      .payslip-header{ text-align:center; margin-bottom:8px; border-bottom:2px solid #000; padding-bottom:6px; }
+      .payslip-header h3{ margin:0; font-size:14px; font-weight:bold; }
+      .payslip-info{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; font-size:10px; }
+      .payslip-section{ margin-top:6px; }
+      .payslip-section-title{ background:#e8e8e8; padding:4px; font-weight:bold; margin-bottom:4px; border-radius:2px; font-size:9px; }
+      .payslip-table{ width:100%; border-collapse:collapse; font-size:10px; }
+      .payslip-table th, .payslip-table td{ border:0.5px solid #bbb; padding:6px; text-align:left; }
+      .payslip-bg{ position:absolute; top:12px; left:12px; right:12px; bottom:12px; background-size:cover; background-position:center; background-repeat:no-repeat; opacity:0.12; border-radius:6px; pointer-events:none; z-index:0; }
+      .payslip-content{ position:relative; z-index:1; }
+      .payslip-gross-line, .payslip-deduction-total, .payslip-net{ text-align:right; font-weight:bold; }
+    `;
+    const payslipHtmlFull = `<style>${inlinePayslipStyles}</style><div class="payslip-root">${previewHTML}</div>`;
+    payslip.payslipHtml = payslipHtmlFull;
+    payslipsData[employee.uid] = payslip;
+    previews.push(previewHTML);
+  }
+
+  payslipContainer.innerHTML = `<div class="payslips-grid">${previews.join("")}</div>`;
+}
+
+async function calculatePayslip(employee, startDate, endDate, multipliers, areaSchedules = {}, otEligibility = { earlyBeforeMinutes:45, afterMinutes:45 }) {
+  const uid = employee.uid;
+  const hourlyRate = employee.hourlyRate || 0;
+
+  // Get time records for this period
+  const timeRecordsSnap = await get(ref(database, `timeRecords/${uid}`));
+  const timeRecords = timeRecordsSnap.exists() ? (timeRecordsSnap.val() || {}) : {};
+  const holidaySnap = await get(ref(database, "settings/holidayDates"));
+  const holidayData = holidaySnap.exists() ? (holidaySnap.val() || {}) : {};
+  const specialHolidayMap = new Map(normalizeHolidayEntries(holidayData.special).map(item => [item.date, item]));
+  const regularHolidayMap = new Map(normalizeHolidayEntries(holidayData.regular).map(item => [item.date, item]));
+
+  let totalDays = 0;
+  let totalHours = 0;
+
+  // track totals for time display
+  let basicHoursTotal = 0;
+  let earlyOtHoursTotal = 0;
+  let otHoursTotal = 0;
+  let restdayOtHoursTotal = 0;
+  let restdayOtOverHoursTotal = 0;
+  let regularHolidayHoursTotal = 0;
+  let regularHolidayOtHoursTotal = 0;
+  let specialHolidayHoursTotal = 0;
+  let specialHolidayOtHoursTotal = 0;
+  let tardinessMinutesTotal = 0;
+  let undertimeMinutesTotal = 0;
+
+  const compensation = {
+    basic: 0,
+    basicTime: "0.0 Hr/s",
+    earlyOT: 0,
+    earlyOTTime: "0.0 Hr/s",
+    ot: 0,
+    otTime: "0.0 Hr/s",
+    restdayOT: 0,
+    restdayOTTime: "0.0 Hr/s",
+    restdayOTOT: 0,
+    restdayOTOTTime: "0.0 Hr/s",
+    regularHoliday: 0,
+    regularHolidayTime: "0.0 Hr/s",
+    regularHolidayOT: 0,
+    regularHolidayOTTime: "0.0 Hr/s",
+    specialHoliday: 0,
+    specialHolidayTime: "0.0 Hr/s",
+    specialHolidayOT: 0,
+    specialHolidayOTTime: "0.0 Hr/s"
+  };
+
+  const dateStart = new Date(startDate + "T00:00:00");
+  const dateEnd = new Date(endDate + "T00:00:00");
+  const basicHourlyRate = hourlyRate;
+
+  for (let d = new Date(dateStart); d <= dateEnd; d.setDate(d.getDate() + 1)) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const dateKey = `${yyyy}-${mm}-${dd}`;
+
+    if (timeRecords[dateKey]) {
+      const record = timeRecords[dateKey];
+      const timeIn = record.timeIn || "";
+      const timeOut = record.timeOut || "";
+
+      if (timeIn && timeOut) {
+        const start = dateTimeFromHHMM(dateKey, timeIn);
+        let end = dateTimeFromHHMM(dateKey, timeOut);
+
+        if (!start || !end) continue;
+
+        // If timeOut is earlier than timeIn (crosses midnight), add 1 day to end
+        if (end <= start) {
+          end = new Date(end.getTime());
+          end.setDate(end.getDate() + 1);
+        }
+
+        const hours = (end - start) / (1000 * 60 * 60);
+
+        if (hours > 0) {
+          totalHours += hours;
+
+          // determine schedule for this area
+          const area = employee.area || (record.area || "");
+          const schedule = (area && areaSchedules[area]) ? areaSchedules[area] : null;
+          const isRestday = isRestDayForEmployee(employee, dateKey);
+          const holidayType = specialHolidayMap.has(dateKey)
+            ? "special"
+            : (regularHolidayMap.has(dateKey) ? "regular" : "");
+
+          if (!isRestday || holidayType){
+            totalDays++;
+          }
+
+          if (holidayType){
+            const holidayWorkedHours = Math.max(0, Math.round(hours));
+            const holidayBaseHours = Math.min(holidayWorkedHours, 8);
+
+            let holidayEarlyHours = 0;
+            let holidayPostHours = 0;
+
+            if (schedule && schedule.start && schedule.end){
+              const schedStart = dateTimeFromHHMM(dateKey, schedule.start);
+              let schedEnd = dateTimeFromHHMM(dateKey, schedule.end);
+              if (schedEnd <= schedStart){
+                schedEnd = new Date(schedEnd.getTime());
+                schedEnd.setDate(schedEnd.getDate() + 1);
+              }
+
+              if (start < schedStart){
+                const rawEarly = Math.max(0, Math.round((schedStart - start) / 60000));
+                const threshold = Number(otEligibility.earlyBeforeMinutes || 45);
+                holidayEarlyHours = bucketOtHours(rawEarly, threshold);
+              }
+
+              if (end > schedEnd){
+                const rawPost = Math.max(0, Math.round((end - schedEnd) / 60000));
+                const threshold2 = Number(otEligibility.afterMinutes || 45);
+                holidayPostHours = bucketOtHours(rawPost, threshold2);
+              }
+            } else {
+              if (holidayWorkedHours > 8){
+                const rawPost = Math.round((holidayWorkedHours - 8) * 60);
+                const threshold2 = Number(otEligibility.afterMinutes || 45);
+                holidayPostHours = bucketOtHours(rawPost, threshold2);
+              }
+            }
+
+            const holidayOtHours = holidayEarlyHours + holidayPostHours;
+
+            if (holidayType === "special"){
+              specialHolidayHoursTotal += holidayBaseHours;
+              specialHolidayOtHoursTotal += holidayOtHours;
+              const baseMult = Number(multipliers.specialHoliday || 1.3);
+              const otMult = Number(multipliers.specialHolidayOT || 1.69);
+              compensation.specialHoliday += holidayBaseHours * basicHourlyRate * baseMult;
+              compensation.specialHolidayOT += holidayOtHours * basicHourlyRate * otMult;
+            } else {
+              regularHolidayHoursTotal += holidayBaseHours;
+              regularHolidayOtHoursTotal += holidayOtHours;
+              const baseMult = Number(multipliers.regularHoliday || 2.0);
+              const otMult = Number(multipliers.regularHolidayOT || 2.6);
+              compensation.regularHoliday += holidayBaseHours * basicHourlyRate * baseMult;
+              compensation.regularHolidayOT += holidayOtHours * basicHourlyRate * otMult;
+            }
+
+            // Holiday work is paid through the holiday buckets, not regular OT.
+            continue;
+          }
+
+          if (isRestday) {
+            const restdayWorkedHours = Math.max(0, Math.round(hours));
+            const restdayBaseHours = Math.min(restdayWorkedHours, 8);
+            const restdayOverHours = Math.max(0, restdayWorkedHours - 8);
+            restdayOtHoursTotal += restdayBaseHours;
+            restdayOtOverHoursTotal += restdayOverHours;
+
+            const restdayMult = Number(multipliers.restdayOT || 1.3);
+            const restdayOverMult = Number(multipliers.restdayOTOT || 1.69);
+
+            compensation.restdayOT += restdayBaseHours * basicHourlyRate * restdayMult;
+            compensation.restdayOTOT += restdayOverHours * basicHourlyRate * restdayOverMult;
+
+            // Rest day work is paid as rest day OT, so skip regular OT/tardiness/undertime buckets.
+            continue;
+          }
+
+          // compute bucketed early OT and post-shift OT
+          let earlyHours = 0;
+          let postHours = 0;
+
+          if (schedule && schedule.start && schedule.end){
+            const schedStart = dateTimeFromHHMM(dateKey, schedule.start);
+            let schedEnd = dateTimeFromHHMM(dateKey, schedule.end);
+            if (schedEnd <= schedStart){
+              schedEnd = new Date(schedEnd.getTime());
+              schedEnd.setDate(schedEnd.getDate() + 1);
+            }
+
+            // early minutes (only if timeIn < schedStart)
+            if (start < schedStart){
+              const rawEarly = Math.max(0, Math.round((schedStart - start) / 60000));
+              const threshold = Number(otEligibility.earlyBeforeMinutes || 45);
+              earlyHours = bucketOtHours(rawEarly, threshold);
+            }
+
+            // post-shift minutes (only if end > schedEnd)
+            if (end > schedEnd){
+              const rawPost = Math.max(0, Math.round((end - schedEnd) / 60000));
+              const threshold2 = Number(otEligibility.afterMinutes || 45);
+              postHours = bucketOtHours(rawPost, threshold2);
+            }
+
+            // tardiness / undertime
+            if (start > schedStart){
+              const rawTard = Math.max(0, Math.round((start - schedStart) / 60000));
+              tardinessMinutesTotal += rawTard;
+            }
+            if (end < schedEnd){
+              const rawUnder = Math.max(0, Math.round((schedEnd - end) / 60000));
+              undertimeMinutesTotal += rawUnder;
+            }
+          } else {
+            // no schedule: treat overtime as hours over 8, but bucket using threshold
+            if (hours > 8){
+              const rawPost = Math.round((hours - 8) * 60);
+              const threshold2 = Number(otEligibility.afterMinutes || 45);
+              postHours = bucketOtHours(rawPost, threshold2);
+            }
+          }
+
+          // accumulate whole-hour OT totals
+          if (earlyHours > 0){
+            earlyOtHoursTotal += earlyHours;
+            const mult = multipliers.earlyOT || 1.25;
+            compensation.earlyOT += earlyHours * basicHourlyRate * mult;
+          }
+          if (postHours > 0){
+            otHoursTotal += postHours;
+            const mult2 = multipliers.overtime || 1.25;
+            compensation.ot += postHours * basicHourlyRate * mult2;
+          }
+        }
+      }
+    }
+  }
+
+  // Count restday whole-hour blocks as full days (8-hr blocks)
+  const restdayDays = Math.floor(restdayOtHoursTotal / 8);
+  const effectiveDays = totalDays + restdayDays;
+
+  // Basic time = effective days worked * 8
+  const basicHours = effectiveDays * 8;
+  compensation.basicTime = `${basicHours} Hr/s`;
+  compensation.basic = basicHours * basicHourlyRate;
+  compensation.earlyOTTime = `${earlyOtHoursTotal} Hr/s`;
+  compensation.otTime = `${otHoursTotal} Hr/s`;
+  compensation.restdayOTTime = `${restdayOtHoursTotal} Hr/s`;
+  compensation.restdayOTOTTime = `${restdayOtOverHoursTotal} Hr/s`;
+  compensation.regularHolidayTime = `${regularHolidayHoursTotal} Hr/s`;
+  compensation.regularHolidayOTTime = `${regularHolidayOtHoursTotal} Hr/s`;
+  compensation.specialHolidayTime = `${specialHolidayHoursTotal} Hr/s`;
+  compensation.specialHolidayOTTime = `${specialHolidayOtHoursTotal} Hr/s`;
+
+  const grossPay = Object.values(compensation).reduce((sum, val) => {
+    if (typeof val === "number" && Number.isFinite(val)) sum += val;
+    return sum;
+  }, 0);
+
+  const deductions = {
+    tardiness: Number(((tardinessMinutesTotal / 60) * basicHourlyRate).toFixed(2)),
+    tardinessTime: minutesToHHMM(tardinessMinutesTotal),
+    undertime: Number(((undertimeMinutesTotal / 60) * basicHourlyRate).toFixed(2)),
+    undertimeTime: minutesToHHMM(undertimeMinutesTotal)
+  };
+
+  const totalDeduc = Object.values(deductions).reduce((a, b) => a + (Number.isFinite(Number(b)) ? Number(b) : 0), 0);
+  const netPay = grossPay - totalDeduc;
+
+  return {
+    name: employee.name || employee.fullName || employee.email,
+    employeeID: employee.employeeId || "N/A",
+    area: employee.area || "N/A",
+    cutoffDate: `${mmddyyyyFromISO(startDate)} - ${mmddyyyyFromISO(endDate)}`,
+    cutoffStart: startDate,
+    cutoffEnd: endDate,
+    daysWorked: effectiveDays,
+    totalWorkingTime: `${totalHours.toFixed(1)} hrs`,
+    uid: uid,
+    compensation,
+    deductions,
+    grossPay,
+    netPay,
+    hourlyRate
+  };
+}
+
+function renderPayslipPreview(payslip) {
+  const totalDeduc = Object.values(payslip.deductions).reduce((a, b) => {
+    const n = Number(b);
+    return a + (Number.isFinite(n) ? n : 0);
+  }, 0);
+
+  return `
+    <div class="payslip-preview">
+      <div class="payslip-header">
+        <h3>BREWSPOT CAFE</h3>
+        <p>PAYSLIP</p>
+      </div>
+
+      <div class="payslip-info">
+        <div>
+          <p><b>Name:</b> ${safeText(payslip.name)}</p>
+          <p><b>Employee ID:</b> ${safeText(payslip.employeeID)}</p>
+          <p><b>Area:</b> ${safeText(payslip.area)}</p>
+        </div>
+        <div>
+          <p><b>Cutoff:</b> ${safeText(payslip.cutoffDate)}</p>
+          <p><b>Days:</b> ${safeText(payslip.daysWorked)}</p>
+        </div>
+      </div>
+
+      <div class="payslip-section">
+        <div class="payslip-section-title">COMPENSATION</div>
+        <table class="payslip-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Time</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Basic</td>
+              <td>${safeText(payslip.compensation.basicTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.basic)}</td>
+            </tr>
+            <tr>
+              <td>Early OT</td>
+              <td>${safeText(payslip.compensation.earlyOTTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.earlyOT)}</td>
+            </tr>
+            <tr>
+              <td>OT</td>
+              <td>${safeText(payslip.compensation.otTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.ot)}</td>
+            </tr>
+            <tr>
+              <td>Rest OT</td>
+              <td>${safeText(payslip.compensation.restdayOTTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.restdayOT)}</td>
+            </tr>
+            <tr>
+              <td>Rest OT OT</td>
+              <td>${safeText(payslip.compensation.restdayOTOTTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.restdayOTOT)}</td>
+            </tr>
+            <tr>
+              <td>Reg Holiday</td>
+              <td>${safeText(payslip.compensation.regularHolidayTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.regularHoliday)}</td>
+            </tr>
+            <tr>
+              <td>Reg Holiday OT</td>
+              <td>${safeText(payslip.compensation.regularHolidayOTTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.regularHolidayOT)}</td>
+            </tr>
+            <tr>
+              <td>Spec Holiday</td>
+              <td>${safeText(payslip.compensation.specialHolidayTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.specialHoliday)}</td>
+            </tr>
+            <tr>
+              <td>Spec Holiday OT</td>
+              <td>${safeText(payslip.compensation.specialHolidayOTTime)}</td>
+              <td class="amount">${moneyPHP(payslip.compensation.specialHolidayOT)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="payslip-gross-line">GROSS PAY: ${moneyPHP(payslip.grossPay)}</div>
+      </div>
+
+      <div class="payslip-section">
+        <div class="payslip-section-title">DEDUCTIONS</div>
+        <table class="payslip-table">
+          <thead>
+            <tr>
+              <th>Description</th>
+              <th>Time</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tardiness</td>
+              <td>${safeText(payslip.deductions.tardinessTime || '00:00')}</td>
+              <td class="amount">${moneyPHP(payslip.deductions.tardiness)}</td>
+            </tr>
+            <tr>
+              <td>Undertime</td>
+              <td>${safeText(payslip.deductions.undertimeTime || '00:00')}</td>
+              <td class="amount">${moneyPHP(payslip.deductions.undertime)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="payslip-deduction-total">TOTAL DEDUCTIONS: ${moneyPHP(totalDeduc)}</div>
+      </div>
+
+      <div class="payslip-net">
+        NET PAY: ${moneyPHP(payslip.netPay)}
+      </div>
+    </div>
+  `;
+}
+
+uploadAllPayslipsBtn.addEventListener("click", async () => {
+  if (!confirm("Upload all payslips to employee accounts?")) return;
+
+  uploadAllPayslipsBtn.disabled = true;
+  payslipMessage.innerHTML = '<div class="loading">Uploading payslips...</div>';
+
+  try {
+    let uploaded = 0;
+    for (const [uid, payslip] of Object.entries(payslipsData)) {
+      await set(ref(database, `payslips/${uid}`), payslip);
+      uploaded++;
+    }
+
+    payslipMessage.innerHTML = `<div class="success-msg">✓ Successfully uploaded ${uploaded} payslips to employees!</div>`;
+    uploadAllPayslipsBtn.disabled = false;
+  } catch (e) {
+    console.error(e);
+    payslipMessage.innerHTML = `<div class="error-msg">Error uploading payslips: ${e.message}</div>`;
+    uploadAllPayslipsBtn.disabled = false;
+  }
 });
 </script>
 

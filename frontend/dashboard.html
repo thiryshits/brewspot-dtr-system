@@ -106,6 +106,18 @@
       </div>
     </div>
 
+    <div class="cards" style="margin-top:12px;">
+      <div class="card">
+        <h3>Early Overtime</h3>
+        <div class="time" id="earlyOtTime">00:00</div>
+      </div>
+
+      <div class="card">
+        <h3>Overtime</h3>
+        <div class="time" id="otTime">00:00</div>
+      </div>
+    </div>
+
     <div class="below">
       <div class="cards">
         <div class="card">
@@ -144,10 +156,119 @@ function minutesToHHMM(mins){
 
 function minutesBetween(dateISO, timeIn, timeOut){
   const start = new Date(`${dateISO}T${timeIn}:00`);
-  const end = new Date(`${dateISO}T${timeOut}:00`);
+  let end = new Date(`${dateISO}T${timeOut}:00`);
+  if (end <= start) {
+    end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+  }
   const ms = end - start;
   if (Number.isNaN(ms) || ms <= 0) return 0;
   return Math.round(ms / (1000 * 60));
+}
+
+function normalizeEndMinutes(timeOutMinutes, referenceMinutes){
+  if (timeOutMinutes === null) return null;
+  if (referenceMinutes !== undefined && timeOutMinutes <= referenceMinutes) {
+    return timeOutMinutes + 1440;
+  }
+  return timeOutMinutes;
+}
+
+function parseHHMM(value){
+  if (!value) return null;
+  const parts = String(value).split(":");
+  if (parts.length !== 2) return null;
+  const hh = Number(parts[0]);
+  const mm = Number(parts[1]);
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  return hh * 60 + mm;
+}
+
+function scheduleMinutes(areaSchedules, area){
+  const schedule = (areaSchedules && areaSchedules[area]) || {};
+  const start = parseHHMM(schedule.start);
+  const end = parseHHMM(schedule.end);
+  if (start === null || end === null) return null;
+  return { start, end };
+}
+
+function computeTardinessAndUndertime(rows, profileArea, areaSchedules){
+  let tardiness = 0;
+  let undertime = 0;
+
+  rows.forEach(r => {
+    const area = r.area || profileArea || "";
+    const schedule = scheduleMinutes(areaSchedules, area);
+    if (!schedule) return;
+
+    const timeInMinutes = parseHHMM(r.timeIn);
+    if (timeInMinutes !== null && schedule.start !== null) {
+      const late = timeInMinutes - schedule.start;
+      if (late > 0) tardiness += late;
+    }
+
+    let timeOutMinutes = parseHHMM(r.timeOut);
+    timeOutMinutes = normalizeEndMinutes(timeOutMinutes, schedule.start);
+    if (timeOutMinutes !== null && schedule.end !== null) {
+      const early = schedule.end - timeOutMinutes;
+      if (early > 0) undertime += early;
+    }
+  });
+
+  return { tardiness, undertime };
+}
+
+function bucketOtHours(rawMinutes, thresholdMinutes){
+  if (rawMinutes < thresholdMinutes) return 0;
+  return Math.floor((rawMinutes - thresholdMinutes) / 60) + 1;
+}
+
+function computeEarlyAndOvertime(rows, profileArea, areaSchedules, otEligibility){
+  let earlyOT = 0;
+  let ot = 0;
+
+  rows.forEach(r => {
+    const area = r.area || profileArea || "";
+    const schedule = scheduleMinutes(areaSchedules, area);
+    if (!schedule) return;
+
+    const timeInMinutes = parseHHMM(r.timeIn);
+    if (timeInMinutes !== null && schedule.start !== null) {
+      const early = Math.max(0, schedule.start - timeInMinutes);
+      const hours = bucketOtHours(early, otEligibility.earlyBeforeMinutes);
+      if (hours > 0) earlyOT += hours * 60;
+    }
+
+    let timeOutMinutes = parseHHMM(r.timeOut);
+    timeOutMinutes = normalizeEndMinutes(timeOutMinutes, schedule.start);
+    if (timeOutMinutes !== null && schedule.end !== null) {
+      const overtime = Math.max(0, timeOutMinutes - schedule.end);
+      const hours = bucketOtHours(overtime, otEligibility.afterMinutes);
+      if (hours > 0) ot += hours * 60;
+    }
+  });
+
+  return { earlyOT, ot };
+}
+
+function computePaidShiftMinutes(rows, profileArea, areaSchedules){
+  return rows.reduce((total, r) => {
+    const area = r.area || profileArea || "";
+    const schedule = scheduleMinutes(areaSchedules, area);
+    if (!schedule) {
+      const explicit = Number(r.paidMinutes);
+      if (!Number.isNaN(explicit) && explicit > 0) return total + explicit;
+      return total + ((r.timeIn && r.timeOut) ? minutesBetween(r.date, r.timeIn, r.timeOut) : 0);
+    }
+
+    const timeInMinutes = parseHHMM(r.timeIn);
+    let timeOutMinutes = parseHHMM(r.timeOut);
+    timeOutMinutes = normalizeEndMinutes(timeOutMinutes, schedule.start);
+    if (timeInMinutes === null || timeOutMinutes === null) return total;
+
+    const workStart = Math.max(schedule.start, timeInMinutes);
+    const workEnd = Math.min(schedule.end, timeOutMinutes);
+    return total + Math.max(0, workEnd - workStart);
+  }, 0);
 }
 
 async function loadCutoff(){
@@ -166,6 +287,20 @@ onAuthStateChanged(auth, async (user) => {
 
   const cutoff = await loadCutoff();
 
+  const userSnap = await get(ref(database, `users/${user.uid}`));
+  const userProfile = userSnap.exists() ? (userSnap.val() || {}) : {};
+  const profileArea = userProfile.area || "";
+
+  const scheduleSnap = await get(ref(database, "settings/areaSchedules"));
+  const areaSchedules = scheduleSnap.exists() ? (scheduleSnap.val() || {}) : {};
+
+  const otEligibilitySnap = await get(ref(database, "settings/otEligibility"));
+  const otEligibilityData = otEligibilitySnap.exists() ? (otEligibilitySnap.val() || {}) : {};
+  const otEligibility = {
+    earlyBeforeMinutes: Number.isFinite(Number(otEligibilityData.earlyBeforeMinutes)) ? Number(otEligibilityData.earlyBeforeMinutes) : 45,
+    afterMinutes: Number.isFinite(Number(otEligibilityData.afterMinutes)) ? Number(otEligibilityData.afterMinutes) : 45
+  };
+
   const recordSnap = await get(ref(database, `timeRecords/${user.uid}`));
   const records = recordSnap.exists() ? (recordSnap.val() || {}) : {};
   const rows = Object.entries(records)
@@ -175,18 +310,18 @@ onAuthStateChanged(auth, async (user) => {
       return r.date >= cutoff.start && r.date <= cutoff.end;
     });
 
-  const paidMinutes = rows.reduce((total, r) => {
-    const explicit = Number(r.paidMinutes);
-    if (!Number.isNaN(explicit) && explicit > 0) return total + explicit;
-    return total + ((r.timeIn && r.timeOut) ? minutesBetween(r.date, r.timeIn, r.timeOut) : 0);
-  }, 0);
+  const paidMinutes = computePaidShiftMinutes(rows, profileArea, areaSchedules);
 
-  const tardinessMinutes = rows.reduce((total, r) => total + Number(r.tardinessMinutes || 0), 0);
-  const undertimeMinutes = rows.reduce((total, r) => total + Number(r.undertimeMinutes || 0), 0);
+  const { tardiness: tardinessMinutes, undertime: undertimeMinutes } =
+    computeTardinessAndUndertime(rows, profileArea, areaSchedules);
+
+  const { earlyOT: earlyOTMinutes, ot: otMinutes } = computeEarlyAndOvertime(rows, profileArea, areaSchedules, otEligibility);
 
   document.getElementById("paidTime").textContent = minutesToHHMM(paidMinutes);
   document.getElementById("tardinessTime").textContent = minutesToHHMM(tardinessMinutes);
   document.getElementById("undertimeTime").textContent = minutesToHHMM(undertimeMinutes);
+  document.getElementById("earlyOtTime").textContent = minutesToHHMM(earlyOTMinutes);
+  document.getElementById("otTime").textContent = minutesToHHMM(otMinutes);
   document.getElementById("totalAttendance").textContent = String(rows.length);
 
   const reqSnap = await get(ref(database, "requests"));

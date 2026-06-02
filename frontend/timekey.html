@@ -140,7 +140,7 @@ button{
 table{
   width:100%;
   border-collapse:collapse;
-  min-width:900px;
+  min-width:1200px;
 }
 
 th{
@@ -213,9 +213,12 @@ th,td{
           <th>WORK HRS</th>
           <th>EARLY OT</th>
           <th>OT</th>
-          <th>REST DAY OT</th>
-          <th>REG HOL</th>
-          <th>SPEC HOL</th>
+          <th>RESTDAY OT</th>
+          <th>RESTDAY OT OT</th>
+          <th>REGULAR HOLIDAY</th>
+          <th>REGULAR HOLIDAY OT</th>
+          <th>SPECIAL HOLIDAY</th>
+          <th>SPECIAL HOLIDAY OT</th>
           <th>TARDINESS</th>
           <th>UNDERTIME</th>
         </tr>
@@ -251,12 +254,119 @@ const filterStatus = document.getElementById("filterStatus");
 let allRows = [];
 let profileName = "";
 let profileArea = "";
+let areaSchedules = {};
+let otEligibility = { earlyBeforeMinutes: 45, afterMinutes: 45 };
 
 function minutesToHHMM(totalMinutes){
   const mins = Math.max(0, parseInt(totalMinutes || "0", 10));
   const hh = String(Math.floor(mins / 60)).padStart(2, "0");
   const mm = String(mins % 60).padStart(2, "0");
   return `${hh}:${mm}`;
+}
+
+function parseHHMM(value){
+  if (!value || typeof value !== "string") return null;
+  const [hh, mm] = value.split(":");
+  const hours = Number(hh);
+  const mins = Number(mm);
+  if (Number.isNaN(hours) || Number.isNaN(mins)) return null;
+  return hours * 60 + mins;
+}
+
+function normalizeEndMinutes(timeOutMinutes, scheduleStart){
+  if (timeOutMinutes === null) return null;
+  if (scheduleStart === undefined || scheduleStart === null) return timeOutMinutes;
+  if (timeOutMinutes <= scheduleStart) {
+    return timeOutMinutes + 1440;
+  }
+  return timeOutMinutes;
+}
+
+function getAreaSchedule(area){
+  if (!area || !areaSchedules) return null;
+  const schedule = areaSchedules[area] || areaSchedules[area.toUpperCase()] || areaSchedules[area.toLowerCase()];
+  if (!schedule || !schedule.start || !schedule.end) return null;
+  const start = parseHHMM(schedule.start);
+  const end = parseHHMM(schedule.end);
+  if (start === null || end === null) return null;
+  return { start, end };
+}
+
+function computeTardinessUndertime(record){
+  const area = record.area || profileArea || "";
+  const schedule = getAreaSchedule(area);
+  const storedTardiness = Number(record.tardinessMinutes || 0);
+  const storedUndertime = Number(record.undertimeMinutes || 0);
+
+  if (!schedule) {
+    return {
+      tardinessMinutes: storedTardiness,
+      undertimeMinutes: storedUndertime
+    };
+  }
+
+  const timeInMinutes = parseHHMM(record.timeIn);
+  let timeOutMinutes = parseHHMM(record.timeOut);
+  timeOutMinutes = normalizeEndMinutes(timeOutMinutes, schedule.start);
+
+  const tardinessMinutes = storedTardiness > 0
+    ? storedTardiness
+    : (timeInMinutes === null ? 0 : Math.max(0, timeInMinutes - schedule.start));
+
+  const undertimeMinutes = storedUndertime > 0
+    ? storedUndertime
+    : (timeOutMinutes === null ? 0 : Math.max(0, schedule.end - timeOutMinutes));
+
+  return { tardinessMinutes, undertimeMinutes };
+}
+
+function bucketOtHours(rawMinutes, thresholdMinutes){
+  if (rawMinutes < thresholdMinutes) return 0;
+  return Math.floor((rawMinutes - thresholdMinutes) / 60) + 1;
+}
+
+function computeOvertime(record){
+  const schedule = getAreaSchedule(record.area || profileArea || "");
+  const storedEarly = Number(record.earlyOTMinutes || record.earlyOtMinutes || 0);
+  const storedOT = Number(record.otMinutes || 0);
+  const timeInMinutes = parseHHMM(record.timeIn);
+  let timeOutMinutes = parseHHMM(record.timeOut);
+  timeOutMinutes = normalizeEndMinutes(timeOutMinutes, schedule.start);
+
+  const earlyMinutesRaw = schedule && timeInMinutes !== null ? Math.max(0, schedule.start - timeInMinutes) : 0;
+  let earlyOTMinutes = 0;
+  if (storedEarly > 0) {
+    earlyOTMinutes = storedEarly;
+  } else if (schedule && timeInMinutes !== null) {
+    const hours = bucketOtHours(earlyMinutesRaw, otEligibility.earlyBeforeMinutes);
+    if (hours > 0) earlyOTMinutes = hours * 60;
+  }
+
+  const otMinutesRaw = schedule && timeOutMinutes !== null ? Math.max(0, timeOutMinutes - schedule.end) : 0;
+  let otMinutes = 0;
+  if (storedOT > 0) {
+    otMinutes = storedOT;
+  } else if (schedule && timeOutMinutes !== null) {
+    const hours = bucketOtHours(otMinutesRaw, otEligibility.afterMinutes);
+    if (hours > 0) otMinutes = hours * 60;
+  }
+
+  return { earlyOTMinutes, otMinutes };
+}
+
+function computeShiftWorkMinutes(record){
+  const schedule = getAreaSchedule(record.area || profileArea || "");
+  const timeInMinutes = parseHHMM(record.timeIn);
+  let timeOutMinutes = parseHHMM(record.timeOut);
+  timeOutMinutes = normalizeEndMinutes(timeOutMinutes, schedule.start);
+
+  if (!schedule || timeInMinutes === null || timeOutMinutes === null) {
+    return (record.timeIn && record.timeOut) ? minutesBetween(record.date, record.timeIn, record.timeOut) : 0;
+  }
+
+  const workStart = Math.max(schedule.start, timeInMinutes);
+  const workEnd = Math.min(schedule.end, timeOutMinutes);
+  return Math.max(0, workEnd - workStart);
 }
 
 function formatToMMDDYYYY(iso){
@@ -276,8 +386,20 @@ function hoursBetween(dateISO, timeIn, timeOut){
   return ms / (1000 * 60 * 60);
 }
 
+function minutesBetween(dateISO, timeIn, timeOut){
+  const start = new Date(`${dateISO}T${timeIn}:00`);
+  const end = new Date(`${dateISO}T${timeOut}:00`);
+  const ms = end - start;
+  if (Number.isNaN(ms) || ms <= 0) return 0;
+  return Math.round(ms / (1000 * 60));
+}
+
 function safeText(v){
   return String(v ?? "");
+}
+
+function minutesFromRecord(record, ...keys){
+  return minutesToHHMM(keys.reduce((sum, key) => sum + Number(record[key] || 0), 0));
 }
 
 function renderRows(rows){
@@ -288,7 +410,9 @@ function renderRows(rows){
   }
 
   tbody.innerHTML = rows.map(r => {
-    const total = (r.timeIn && r.timeOut) ? hoursBetween(r.date, r.timeIn, r.timeOut) : 0;
+    const totalMinutes = (r.timeIn && r.timeOut) ? computeShiftWorkMinutes(r) : 0;
+    const { tardinessMinutes, undertimeMinutes } = computeTardinessUndertime(r);
+    const { earlyOTMinutes, otMinutes } = computeOvertime(r);
 
     return `
       <tr>
@@ -297,14 +421,17 @@ function renderRows(rows){
         <td>${safeText(r.area || profileArea)}</td>
         <td>${safeText(r.timeIn || "")}</td>
         <td>${safeText(r.timeOut || "")}</td>
-        <td>${total.toFixed(2)}</td>
-        <td>${minutesToHHMM(r.earlyOTMinutes || 0)}</td>
-        <td>${minutesToHHMM(r.otMinutes || 0)}</td>
-        <td>${minutesToHHMM(r.restDayOTMinutes || 0)}</td>
-        <td>${minutesToHHMM(r.regHolidayMinutes || 0)}</td>
-        <td>${minutesToHHMM(r.specHolidayMinutes || 0)}</td>
-        <td>${minutesToHHMM(r.tardinessMinutes || 0)}</td>
-        <td>${minutesToHHMM(r.undertimeMinutes || 0)}</td>
+        <td>${minutesToHHMM(totalMinutes)}</td>
+        <td>${minutesToHHMM(earlyOTMinutes)}</td>
+        <td>${minutesToHHMM(otMinutes)}</td>
+        <td>${minutesFromRecord(r, "restDayOTMinutes")}</td>
+        <td>${minutesFromRecord(r, "restDayOTOTMinutes")}</td>
+        <td>${minutesFromRecord(r, "regHolidayMinutes", "regularHolidayMinutes")}</td>
+        <td>${minutesFromRecord(r, "regHolidayOTMinutes", "regularHolidayOTMinutes")}</td>
+        <td>${minutesFromRecord(r, "specHolidayMinutes", "specialHolidayMinutes")}</td>
+        <td>${minutesFromRecord(r, "specHolidayOTMinutes", "specialHolidayOTMinutes")}</td>
+        <td>${minutesToHHMM(tardinessMinutes)}</td>
+        <td>${minutesToHHMM(undertimeMinutes)}</td>
       </tr>
     `;
   }).join("");
@@ -364,6 +491,16 @@ onAuthStateChanged(auth, async (user) => {
 
   profileName = profile.name || profile.fullName || profile.fullname || profile.username || user.email || "";
   profileArea = profile.area || "";
+
+  const scheduleSnap = await get(ref(database, "settings/areaSchedules"));
+  areaSchedules = scheduleSnap.exists() ? (scheduleSnap.val() || {}) : {};
+
+  const otEligibilitySnap = await get(ref(database, "settings/otEligibility"));
+  const eligibility = otEligibilitySnap.exists() ? (otEligibilitySnap.val() || {}) : {};
+  const early = Number(eligibility.earlyBeforeMinutes);
+  const after = Number(eligibility.afterMinutes);
+  otEligibility.earlyBeforeMinutes = Number.isFinite(early) ? early : otEligibility.earlyBeforeMinutes;
+  otEligibility.afterMinutes = Number.isFinite(after) ? after : otEligibility.afterMinutes;
 
   allRows = Object.entries(records)
     .map(([date, record]) => ({ date, ...(record || {}) }))

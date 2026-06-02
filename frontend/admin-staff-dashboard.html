@@ -85,18 +85,110 @@
     background:#000; color:#fff;
   }
   .btn:hover{ opacity:0.9; }
+  .btn-edit{
+    background:#1976d2; padding:6px 10px; font-size:12px;
+  }
+  .btn-edit:hover{ background:#1565c0; }
+  .btn-delete{
+    background:#d32f2f; padding:6px 10px; font-size:12px;
+  }
+  .btn-delete:hover{ background:#c62828; }
+  .btn-add-record{
+    background:#000;
+    padding:10px 14px;
+  }
+  .btn-add-record:hover{ background:#45a049; }
 
-  .table-wrap{ width:100%; overflow-x:auto; margin-top:10px; }
+  .table-wrap{
+    width:100%;
+    max-height:60vh;
+    overflow:auto;
+    margin-top:10px;
+    position:relative;
+  }
   table{
     width:100%;
-    border-collapse:collapse;
+    border-collapse:separate;
+    border-spacing:0;
     min-width: 900px;
     background:rgba(255,255,255,0.55);
     border-radius:10px;
-    overflow:hidden;
   }
-  th{ background:#000; color:#fff; }
+  thead th{
+    background:#000;
+    color:#fff;
+    position:sticky;
+    top:0;
+    z-index:3;
+    box-shadow:0 2px 0 #000;
+  }
   th,td{ border:1px solid #000; padding:10px; text-align:center; vertical-align:middle; }
+
+  /* Modal Styles */
+  .modal{
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.5);
+    z-index:1000;
+    justify-content:center;
+    align-items:center;
+  }
+  .modal.active{
+    display:flex;
+  }
+  .modal-content{
+    background:#fff;
+    padding:24px;
+    border-radius:10px;
+    box-shadow:0 0 20px rgba(0,0,0,0.3);
+    width:90%;
+    max-width:500px;
+  }
+  .modal-header{
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:18px;
+    color:#000;
+  }
+  .modal-body{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:18px;
+  }
+  .modal-field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .modal-field label{
+    font-weight:bold;
+    font-size:14px;
+  }
+  .modal-field input{
+    padding:10px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    font-size:14px;
+  }
+  .modal-footer{
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+  }
+  .btn-cancel{
+    background:#666; color:#fff;
+    padding:10px 16px; border-radius:6px; border:none;
+    cursor:pointer; font-weight:bold;
+  }
+  .btn-cancel:hover{ background:#555; }
+  .btn-save{
+    background:#4caf50; color:#fff;
+    padding:10px 16px; border-radius:6px; border:none;
+    cursor:pointer; font-weight:bold;
+  }
+  .btn-save:hover{ background:#45a049; }
 
   .help{ font-size:13px; opacity:0.85; margin-top:8px; }
 </style>
@@ -109,6 +201,8 @@
     <div class="nav-left">
       <a href="admin.html">Admin Dashboard</a>
       <a href="admin-staff-dashboard.html">Staff Dashboard</a>
+      <a href="admin.html#tab-restdays">Restday Dashboard</a>
+      <a href="admin.html#tab-calendar">Calendar Dashboard</a>
     </div>
     <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
   </div>
@@ -121,22 +215,24 @@
         <div class="field">
           <label for="staffSelect">Select Staff</label>
           <select id="staffSelect">
-            <option value="">Loading...</option>
+            <option value="">-- ALL RECORDS --</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="fromDate">From (MM/DD/YYYY)</label>
+          <label for="fromDate">From</label>
           <input id="fromDate" type="date">
         </div>
 
         <div class="field">
-          <label for="toDate">To (MM/DD/YYYY)</label>
+          <label for="toDate">To</label>
           <input id="toDate" type="date">
         </div>
 
         <button class="btn" id="filterBtn" type="button">Filter</button>
+        <button class="btn btn-add-record" id="addRecordBtn" type="button">+ Add Record</button>
 
+      </div>
     </div>
 
     <div class="card">
@@ -146,16 +242,55 @@
         <table>
           <thead>
             <tr>
+              <th>Staff</th>
+              <th>Area</th>
               <th>Date (MM/DD/YYYY)</th>
               <th>Time In</th>
               <th>Time Out</th>
-              <th>Total Hours</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="recordsBody">
-            <tr><td colspan="4">Select a staff and filter a date range.</td></tr>
+            <tr><td colspan="6">Select a staff and filter a date range.</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit/Add Modal -->
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header" id="modalTitle">Edit Time Record</div>
+      <div class="modal-body">
+        <div class="modal-field" id="editStaffField" style="display:none;">
+          <label for="editStaff">Staff / Employee Name</label>
+          <select id="editStaff">
+            <option value="">-- Select Staff --</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label for="editDate">Date (YYYY-MM-DD)</label>
+          <input id="editDate" type="date">
+        </div>
+        <div class="modal-field">
+          <label for="editTimeIn">Time In (HH:MM)</label>
+          <input id="editTimeIn" type="time">
+        </div>
+        <div class="modal-field">
+          <label for="editTimeOut">Time Out (HH:MM)</label>
+          <input id="editTimeOut" type="time">
+        </div>
+        <div class="modal-field">
+          <label for="editArea">Area</label>
+          <select id="editArea">
+            <option value="">-- Select Area --</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" id="cancelBtn">Cancel</button>
+        <button class="btn-save" id="saveBtn">Save</button>
       </div>
     </div>
   </div>
@@ -163,7 +298,7 @@
 <script type="module">
 import { auth, database } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
-import { ref, get } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+import { ref, get, update, set } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 function mmddyyyyFromISO(iso){
   const d = new Date(iso + "T00:00:00");
@@ -175,7 +310,6 @@ function mmddyyyyFromISO(iso){
 }
 
 function hoursBetween(dateISO, timeIn, timeOut){
-  // same-day only. if you need cross-midnight, tell me.
   const start = new Date(`${dateISO}T${timeIn}:00`);
   const end = new Date(`${dateISO}T${timeOut}:00`);
   const ms = end - start;
@@ -190,6 +324,39 @@ const fromDate = document.getElementById("fromDate");
 const toDate = document.getElementById("toDate");
 const filterBtn = document.getElementById("filterBtn");
 const recordsBody = document.getElementById("recordsBody");
+const addRecordBtn = document.getElementById("addRecordBtn");
+let staffMap = {};
+let staffAreaMap = {};
+let areaOptions = [];
+
+// Modal elements
+const editModal = document.getElementById("editModal");
+const modalTitle = document.getElementById("modalTitle");
+const editStaffField = document.getElementById("editStaffField");
+const editStaff = document.getElementById("editStaff");
+const editDate = document.getElementById("editDate");
+const editTimeIn = document.getElementById("editTimeIn");
+const editTimeOut = document.getElementById("editTimeOut");
+const editArea = document.getElementById("editArea");
+const cancelBtn = document.getElementById("cancelBtn");
+const saveBtn = document.getElementById("saveBtn");
+
+function buildAreaOptions(selected = ""){
+  return [
+    `<option value="">-- Select Area --</option>`,
+    ...areaOptions.map(area => `<option value="${area}" ${area === selected ? "selected" : ""}>${area}</option>`)
+  ].join("");
+}
+
+async function loadAreaOptions(){
+  const snap = await get(ref(database, "settings/areaSchedules"));
+  const areasObj = snap.exists() ? (snap.val() || {}) : {};
+  areaOptions = Object.keys(areasObj).sort();
+}
+
+// State for edit
+let currentEditData = null;
+let isNewRecord = false;
 
 async function requireAdmin(user){
   let role = "";
@@ -216,10 +383,27 @@ async function loadStaffList(){
     .filter(u => (u.role || "staff").toLowerCase() !== "admin")
     .sort((a,b) => safeText(a.name || a.email).localeCompare(safeText(b.name || b.email)));
 
-  staffSelect.innerHTML = `<option value="">-- Select --</option>` + staff.map(u => {
+  staffMap = {};
+  staffAreaMap = {};
+  staff.forEach(u => {
     const label = u.name || u.fullName || u.fullname || u.email || u.uid;
-    return `<option value="${u.uid}">${safeText(label)}</option>`;
+    staffMap[u.uid] = safeText(label);
+    staffAreaMap[u.uid] = safeText(u.area || "");
+  });
+
+  staffSelect.innerHTML = `<option value="">-- ALL RECORDS --</option>` + staff.map(u => {
+    const label = staffMap[u.uid];
+    return `<option value="${u.uid}">${label}</option>`;
   }).join("");
+
+  editStaff.innerHTML = `<option value="">-- Select Staff --</option>` + staff.map(u => {
+    const label = staffMap[u.uid];
+    return `<option value="${u.uid}">${label}</option>`;
+  }).join("");
+
+  await loadAreaOptions();
+  editArea.innerHTML = buildAreaOptions();
+  await loadRecords();
 }
 
 function eachDateISO(startISO, endISO){
@@ -235,37 +419,185 @@ function eachDateISO(startISO, endISO){
   return out;
 }
 
-async function loadRecords(uid, startISO, endISO){
-  // reads: timeRecords/<uid>/<YYYY-MM-DD> = { timeIn, timeOut }
-  const snap = await get(ref(database, `timeRecords/${uid}`));
-  const all = snap.exists() ? (snap.val() || {}) : {};
+function openEditModal(record, uid){
+  isNewRecord = false;
+  currentEditData = { ...record, uid };
+  modalTitle.textContent = "Edit Time Record";
+  editStaffField.style.display = "none";
+  editStaff.value = uid;
+  editDate.value = record.date || "";
+  editTimeIn.value = record.timeIn || "";
+  editTimeOut.value = record.timeOut || "";
+  editArea.value = record.area || staffAreaMap[uid] || "";
+  editDate.disabled = true;
+  editModal.classList.add("active");
+}
 
-  const days = eachDateISO(startISO, endISO);
+function openAddModal(uid){
+  isNewRecord = true;
+  currentEditData = { uid };
+  modalTitle.textContent = "Add New Time Record";
+  editStaffField.style.display = "block";
+  editStaff.value = uid || "";
+  editDate.value = "";
+  editTimeIn.value = "";
+  editTimeOut.value = "";
+  editArea.value = staffAreaMap[uid] || "";
+  editDate.disabled = false;
+  editModal.classList.add("active");
+}
 
+function closeEditModal(){
+  editModal.classList.remove("active");
+  currentEditData = null;
+  isNewRecord = false;
+}
+
+async function saveRecord(){
+  if (!currentEditData){
+    alert("No record selected.");
+    return;
+  }
+
+  if (isNewRecord){
+    const selectedUid = editStaff.value.trim();
+    if (!selectedUid){
+      alert("Please select a staff or employee name.");
+      return;
+    }
+    currentEditData.uid = selectedUid;
+  }
+
+  const date = editDate.value.trim();
+  const timeIn = editTimeIn.value.trim();
+  const timeOut = editTimeOut.value.trim();
+  const area = editArea.value.trim();
+
+  if (!date){
+    alert("Please select a date.");
+    return;
+  }
+  if (!timeIn || !timeOut){
+    alert("Please enter both Time In and Time Out.");
+    return;
+  }
+
+  try{
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving...";
+
+    const path = `timeRecords/${currentEditData.uid}/${date}`;
+    await update(ref(database, path), {
+      timeIn: timeIn,
+      timeOut: timeOut,
+      area: area || null
+    });
+
+    closeEditModal();
+    // Reload records
+    await loadRecords(staffSelect.value, fromDate.value, toDate.value);
+    alert(isNewRecord ? "Record added successfully." : "Record updated successfully.");
+  }catch(e){
+    console.error("Save failed:", e);
+    alert("Error saving record: " + e.message);
+  }finally{
+    saveBtn.disabled = false;
+    saveBtn.textContent = "Save";
+  }
+}
+
+async function deleteRecord(uid, date){
+  if (!confirm("Are you sure you want to delete this record?")){
+    return;
+  }
+
+  try{
+    const path = `timeRecords/${uid}/${date}`;
+    await set(ref(database, path), null);
+
+    // Reload records
+    await loadRecords(staffSelect.value, fromDate.value, toDate.value);
+    alert("Record deleted successfully.");
+  }catch(e){
+    console.error("Delete failed:", e);
+    alert("Error deleting record: " + e.message);
+  }
+}
+
+async function loadRecords(uid = "", startISO = "", endISO = ""){
   const rows = [];
-  for (const day of days){
-    if (all[day]){
-      rows.push({ date: day, ...all[day] });
+
+  if (uid) {
+    const snap = await get(ref(database, `timeRecords/${uid}`));
+    const all = snap.exists() ? (snap.val() || {}) : {};
+    const days = startISO && endISO ? eachDateISO(startISO, endISO) : Object.keys(all).sort();
+    for (const day of days){
+      if (all[day]){
+        rows.push({
+          uid,
+          staffName: staffMap[uid] || "",
+          area: all[day].area || staffAreaMap[uid] || "",
+          date: day,
+          ...all[day]
+        });
+      }
+    }
+  } else {
+    const snap = await get(ref(database, `timeRecords`));
+    const allUsers = snap.exists() ? (snap.val() || {}) : {};
+    for (const [recordUid, recordDays] of Object.entries(allUsers)){
+      const days = startISO && endISO ? eachDateISO(startISO, endISO) : Object.keys(recordDays).sort();
+      for (const day of days){
+        if (recordDays[day]){
+          rows.push({
+            uid: recordUid,
+            staffName: staffMap[recordUid] || recordUid,
+            area: recordDays[day].area || staffAreaMap[recordUid] || "",
+            date: day,
+            ...recordDays[day]
+          });
+        }
+      }
     }
   }
 
   if (rows.length === 0){
-    recordsBody.innerHTML = `<tr><td colspan="4">No records found for that range.</td></tr>`;
+    recordsBody.innerHTML = `<tr><td colspan="6">No records found for that range.</td></tr>`;
     return;
   }
 
   recordsBody.innerHTML = rows.map(r => {
-    const total = (r.timeIn && r.timeOut) ? hoursBetween(r.date, r.timeIn, r.timeOut) : 0;
     return `
       <tr>
+        <td>${safeText(r.staffName || "")}</td>
+        <td>${safeText(r.area || "")}</td>
         <td>${mmddyyyyFromISO(r.date)}</td>
         <td>${safeText(r.timeIn || "")}</td>
         <td>${safeText(r.timeOut || "")}</td>
-        <td>${total.toFixed(2)}</td>
+        <td>
+          <button class="btn-edit" onclick="editRecord(this, '${r.uid}')">Edit</button>
+          <button class="btn-delete" onclick="deleteRecord('${r.uid}', '${r.date}')">Delete</button>
+        </td>
       </tr>
     `;
   }).join("");
 }
+
+window.editRecord = function(btn, uid){
+  const row = btn.closest("tr");
+  const cells = row.querySelectorAll("td");
+  const area = cells[1].textContent.trim();
+  const dateText = cells[2].textContent.trim();
+  const timeIn = cells[3].textContent.trim();
+  const timeOut = cells[4].textContent.trim();
+  
+  const [mm, dd, yyyy] = dateText.split("/");
+  const dateISO = `${yyyy}-${mm}-${dd}`;
+
+  openEditModal({ date: dateISO, timeIn, timeOut, area }, uid);
+};
+
+window.deleteRecord = deleteRecord;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user){
@@ -284,22 +616,25 @@ filterBtn.addEventListener("click", async () => {
   const startISO = fromDate.value;
   const endISO = toDate.value;
 
-  if (!uid){
-    alert("Please select a staff.");
+  if ((startISO && !endISO) || (!startISO && endISO)){
+    alert("Please select both From and To dates or leave both blank.");
     return;
   }
-  if (!startISO || !endISO){
-    alert("Please select From and To dates.");
-    return;
-  }
-  if (startISO > endISO){
+  if (startISO && endISO && startISO > endISO){
     alert("Invalid range: From date is later than To date.");
     return;
   }
 
-  recordsBody.innerHTML = `<tr><td colspan="4">Loading...</td></tr>`;
+  recordsBody.innerHTML = `<tr><td colspan="6">Loading...</td></tr>`;
   await loadRecords(uid, startISO, endISO);
 });
+
+addRecordBtn.addEventListener("click", () => {
+  openAddModal(staffSelect.value || "");
+});
+
+cancelBtn.addEventListener("click", closeEditModal);
+saveBtn.addEventListener("click", saveRecord);
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   try { await signOut(auth); } catch(e){ console.warn(e); }
