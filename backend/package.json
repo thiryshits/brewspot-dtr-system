@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node --use-system-ca server.js",
     "dev": "node --use-system-ca --watch server.js",
-    "test": "node --check server.js && node --check config/firebase.js && node --check routes/authRoutes.js && node --check routes/attendanceRoutes.js && node --check middleware/authMiddleware.js && node --check jobs/attendanceWindow.js"
+    "test": "node --check server.js && node --check config/firebase.js && node --check routes/authRoutes.js && node --check routes/attendanceRoutes.js && node --check middleware/authMiddleware.js"
   },
   "keywords": [],
   "author": "",

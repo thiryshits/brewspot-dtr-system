@@ -6,7 +6,6 @@ const cors = require('cors');
 const { database } = require('./config/firebase');
 const authRoutes = require('./routes/authRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
-const { startAttendanceWindowReconciliation } = require('./jobs/attendanceWindow');
 
 const app = express();
 
@@ -58,7 +57,6 @@ app.use((err, req, res, next) => {
 async function startServer() {
     await database.ref('.info/connected').once('value');
     console.log('Firebase connected');
-    startAttendanceWindowReconciliation();
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
